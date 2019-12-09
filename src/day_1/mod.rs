@@ -11,10 +11,15 @@ pub fn run_day_1() {
         Ok(module_masses) => {
             let fuel_counter_upper = FuelCounterUpper::new(&module_masses);
 
-            println!("Part 1 Solution is: {:?}", fuel_counter_upper.total_fuel_required());
             println!(
-                "Part 2 Solution is: {:?}", fuel_counter_upper.total_fuel_required_recursive());
-        },
+                "Part 1 Solution is: {:?}",
+                fuel_counter_upper.total_fuel_required()
+            );
+            println!(
+                "Part 2 Solution is: {:?}",
+                fuel_counter_upper.total_fuel_required_recursive()
+            );
+        }
         Err(error) => println!("Error parsing file: {:?}", error),
     }
 }

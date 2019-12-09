@@ -4,7 +4,10 @@ pub struct IntcodeComputer {
 }
 
 impl IntcodeComputer {
-    pub fn new<A>(args: A) -> IntcodeComputer where A: Into<IntcodeComputer> {
+    pub fn new<A>(args: A) -> IntcodeComputer
+    where
+        A: Into<IntcodeComputer>,
+    {
         args.into()
     }
 
@@ -20,7 +23,8 @@ impl IntcodeComputer {
                 Some(99) => break,
                 _ => panic!(
                     "Something went horribly wrong for `run_program` at index {:?}!",
-                    index),
+                    index
+                ),
             }
 
             index += 4;
@@ -58,20 +62,19 @@ impl IntcodeComputer {
 
 impl From<&[i32]> for IntcodeComputer {
     fn from(a: &[i32]) -> IntcodeComputer {
-        IntcodeComputer { program: a.to_vec() }
+        IntcodeComputer {
+            program: a.to_vec(),
+        }
     }
 }
 
 impl From<&[String]> for IntcodeComputer {
     fn from(a: &[String]) -> IntcodeComputer {
-        let temp: Vec<i32> = a.iter()
-            .map(|s| s.parse::<i32>().unwrap())
-            .collect();
+        let temp: Vec<i32> = a.iter().map(|s| s.parse::<i32>().unwrap()).collect();
 
         IntcodeComputer::new(temp.as_slice())
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -82,7 +85,9 @@ mod tests {
     fn test_new() {
         let values = vec![1, 2, 3, 4, 5];
 
-        let expected = IntcodeComputer { program: values.clone() };
+        let expected = IntcodeComputer {
+            program: values.clone(),
+        };
 
         let result = IntcodeComputer::new(values.as_slice());
 
@@ -91,8 +96,7 @@ mod tests {
 
     #[test]
     fn test_from_str_vec() {
-        let values = vec![
-            String::from("1"), String::from("2"), String::from("3")];
+        let values = vec![String::from("1"), String::from("2"), String::from("3")];
 
         let expected = IntcodeComputer::new(vec![1, 2, 3].as_slice());
 
@@ -103,16 +107,16 @@ mod tests {
 
     #[test]
     fn test_new_from_file() {
-        let values: Vec<String> =
-            to_string_vector("test_inputs/day_2_part_1.txt").unwrap()
-                .get(0)
-                .unwrap()
-                .split(",")
-                .map(|s| String::from(s))
-                .collect();
+        let values: Vec<String> = to_string_vector("test_inputs/day_2_part_1.txt")
+            .unwrap()
+            .get(0)
+            .unwrap()
+            .split(",")
+            .map(|s| String::from(s))
+            .collect();
 
-        let expected = IntcodeComputer::new(
-            vec![1, 9, 10, 3, 2, 3, 11, 0, 99, 30, 40, 50].as_slice());
+        let expected =
+            IntcodeComputer::new(vec![1, 9, 10, 3, 2, 3, 11, 0, 99, 30, 40, 50].as_slice());
 
         let result = IntcodeComputer::new(values.as_slice());
 
@@ -121,8 +125,7 @@ mod tests {
 
     #[test]
     fn test_replace_code_in_program() {
-        let mut intcode_computer = IntcodeComputer::new(
-            vec![1, 2, 3].as_slice());
+        let mut intcode_computer = IntcodeComputer::new(vec![1, 2, 3].as_slice());
 
         let expected = IntcodeComputer::new(vec![1, 4, 3].as_slice());
 
@@ -153,11 +156,9 @@ mod tests {
         assert_eq!(values, expected);
     }
 
-
     #[test]
     fn test_run_program_opcode_1() {
-        let intcode_computer = IntcodeComputer::new(
-            vec![1, 1, 1, 4, 99, 5, 6, 0, 99].as_slice());
+        let intcode_computer = IntcodeComputer::new(vec![1, 1, 1, 4, 99, 5, 6, 0, 99].as_slice());
 
         let expected = vec![30, 1, 1, 4, 2, 5, 6, 0, 99];
 
@@ -168,8 +169,7 @@ mod tests {
 
     #[test]
     fn test_run_program_opcode_2() {
-        let intcode_computer = IntcodeComputer::new(
-            vec![2, 4, 4, 5, 99, 0].as_slice());
+        let intcode_computer = IntcodeComputer::new(vec![2, 4, 4, 5, 99, 0].as_slice());
 
         let expected = vec![2, 4, 4, 5, 99, 9801];
 
@@ -180,18 +180,17 @@ mod tests {
 
     #[test]
     fn test_run_program_from_file() {
-        let values: Vec<String> =
-            to_string_vector("test_inputs/day_2_part_1.txt").unwrap()
-                .get(0)
-                .unwrap()
-                .split(",")
-                .map(|s| String::from(s))
-                .collect();
+        let values: Vec<String> = to_string_vector("test_inputs/day_2_part_1.txt")
+            .unwrap()
+            .get(0)
+            .unwrap()
+            .split(",")
+            .map(|s| String::from(s))
+            .collect();
 
         let intcode_computer = IntcodeComputer::new(values.as_slice());
 
-        let expected = vec![
-            3500, 9, 10, 70, 2, 3, 11, 0, 99, 30, 40, 50];
+        let expected = vec![3500, 9, 10, 70, 2, 3, 11, 0, 99, 30, 40, 50];
 
         let result = intcode_computer.run_program();
 

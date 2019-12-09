@@ -13,17 +13,21 @@ impl FuelCounterUpper {
             temp_modules.push(Module::from_str(&mass_value));
         }
 
-        FuelCounterUpper { modules: temp_modules }
+        FuelCounterUpper {
+            modules: temp_modules,
+        }
     }
 
     pub fn total_fuel_required(&self) -> i32 {
-        self.modules.iter()
+        self.modules
+            .iter()
             .map(|module: &Module| fuel_required(module))
             .sum()
     }
 
     pub fn total_fuel_required_recursive(&self) -> i32 {
-        self.modules.iter()
+        self.modules
+            .iter()
             .map(|module: &Module| fuel_required_recursive(module.mass))
             .sum()
     }
@@ -52,7 +56,9 @@ mod tests {
     fn test_new() {
         let mass_values = vec![String::from("5"), String::from("666")];
 
-        let expected = FuelCounterUpper { modules: vec![Module::new(5), Module::new(666)] };
+        let expected = FuelCounterUpper {
+            modules: vec![Module::new(5), Module::new(666)],
+        };
 
         let result = FuelCounterUpper::new(&mass_values);
 
@@ -64,14 +70,18 @@ mod tests {
         let mass_values = to_string_vector("test_inputs/day_1_part_1.txt").unwrap();
 
         let expected = FuelCounterUpper {
-            modules: vec![Module::new(12), Module::new(14), Module::new(1969), Module::new(100756)]
+            modules: vec![
+                Module::new(12),
+                Module::new(14),
+                Module::new(1969),
+                Module::new(100756),
+            ],
         };
 
         let result = FuelCounterUpper::new(&mass_values);
 
         assert_eq!(result, expected);
     }
-
 
     #[test]
     fn test_total_fuel_required() {
@@ -114,7 +124,6 @@ mod tests {
 
         assert_eq!(result, expected);
     }
-
 
     #[test]
     fn test_fuel_required() {

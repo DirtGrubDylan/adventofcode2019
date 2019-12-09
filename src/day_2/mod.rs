@@ -12,16 +12,13 @@ pub fn run_day_2() {
                 find_first_solution(&program);
                 find_second_solution(&program, 19690720, 99, 99);
             }
-        },
+        }
         Err(error) => println!("Error parsing file: {:?}", error),
     }
 }
 
 fn find_first_solution(program: &str) {
-    let program_values: Vec<String> = program
-        .split(",")
-        .map(|s| String::from(s))
-        .collect();
+    let program_values: Vec<String> = program.split(",").map(|s| String::from(s)).collect();
 
     let mut intcode_computer = IntcodeComputer::from(program_values.as_slice());
 
@@ -34,10 +31,7 @@ fn find_first_solution(program: &str) {
 }
 
 fn find_second_solution(program: &str, target: i32, largest_noun: i32, largest_verb: i32) {
-    let program_values: Vec<String> = program
-        .split(",")
-        .map(|s| String::from(s))
-        .collect();
+    let program_values: Vec<String> = program.split(",").map(|s| String::from(s)).collect();
 
     let mut intcode_computer = IntcodeComputer::from(program_values.as_slice());
 
