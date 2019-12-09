@@ -19,7 +19,7 @@ impl IntcodeComputer {
                 Some(2) => Self::run_opcode_2(&mut result, index),
                 Some(99) => break,
                 _ => panic!(
-                    "Something went horribly wrong for `run_program` at index {:?}!", 
+                    "Something went horribly wrong for `run_program` at index {:?}!",
                     index),
             }
 
@@ -110,7 +110,7 @@ mod tests {
                 .split(",")
                 .map(|s| String::from(s))
                 .collect();
-        
+
         let expected = IntcodeComputer::new(
             vec![1, 9, 10, 3, 2, 3, 11, 0, 99, 30, 40, 50].as_slice());
 
@@ -137,7 +137,7 @@ mod tests {
 
         let expected = vec![1, 1, 1, 4, 2, 5, 6, 0, 99];
 
-        let result = IntcodeComputer::run_opcode_1(&mut values, 0);
+        IntcodeComputer::run_opcode_1(&mut values, 0);
 
         assert_eq!(values, expected);
     }
@@ -148,7 +148,7 @@ mod tests {
 
         let expected = vec![2, 4, 4, 5, 99, 9801];
 
-        let result = IntcodeComputer::run_opcode_2(&mut values, 0);
+        IntcodeComputer::run_opcode_2(&mut values, 0);
 
         assert_eq!(values, expected);
     }
@@ -189,7 +189,7 @@ mod tests {
                 .collect();
 
         let intcode_computer = IntcodeComputer::new(values.as_slice());
-        
+
         let expected = vec![
             3500, 9, 10, 70, 2, 3, 11, 0, 99, 30, 40, 50];
 
