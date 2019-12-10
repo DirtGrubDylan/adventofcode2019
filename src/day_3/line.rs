@@ -153,10 +153,23 @@ mod test {
         let line2 = Line::new(2, 5, 3, "D");
         let line3 = Line::new(0, 8, 0, "R");
         let line4 = Line::new(0, 5, 8, "U");
+        let line5 = Line::new(0, 8, 2, "R");
 
-        let mut lines = vec![line1.clone(), line2.clone(), line3.clone(), line4.clone()];
+        let mut lines = vec![
+            line1.clone(),
+            line2.clone(),
+            line3.clone(),
+            line4.clone(),
+            line5.clone(),
+        ];
 
-        let expected = vec![line4.clone(), line3.clone(), line2.clone(), line1.clone()];
+        let expected = vec![
+            line4.clone(),
+            line3.clone(),
+            line5.clone(),
+            line2.clone(),
+            line1.clone(),
+        ];
 
         lines.sort();
 
