@@ -1,5 +1,5 @@
 #[derive(Debug, Clone, Eq, PartialEq, PartialOrd, Ord)]
-enum Direction {
+pub enum Direction {
     Right,
     Left,
     Up,
@@ -8,10 +8,10 @@ enum Direction {
 
 #[derive(Debug, Clone, Eq, PartialEq, PartialOrd, Ord)]
 pub struct Line {
-    start_range: i32,
-    end_range: i32,
-    offset: i32,
-    direction: Direction,
+    pub start_range: i32,
+    pub end_range: i32,
+    pub offset: i32,
+    pub direction: Direction,
 }
 
 impl Line {
@@ -31,15 +31,6 @@ impl Line {
             direction: direction,
         }
     }
-
-    pub fn get_relative_end_x_y_position(&self) -> (i32, i32) {
-        match self.direction {
-            Direction::Right => (self.end_range, self.offset),
-            Direction::Left => (self.start_range, self.offset),
-            Direction::Up => (self.offset, self.end_range),
-            Direction::Down => (self.offset, self.start_range),
-        }
-    }
 }
 
 #[cfg(test)]
@@ -56,42 +47,6 @@ mod test {
         };
 
         let result = Line::new(0, 8, 0, "R");
-
-        assert_eq!(result, expected);
-    }
-
-    #[test]
-    fn test_get_relative_end_x_y_position_right() {
-        let expected = (8, 0);
-
-        let result = Line::new(0, 8, 0, "R").get_relative_end_x_y_position();
-
-        assert_eq!(result, expected);
-    }
-
-    #[test]
-    fn test_get_relative_end_x_y_position_down() {
-        let expected = (3, 2);
-
-        let result = Line::new(2, 5, 3, "D").get_relative_end_x_y_position();
-
-        assert_eq!(result, expected);
-    }
-
-    #[test]
-    fn test_get_relative_end_x_y_position_left() {
-        let expected = (3, 5);
-
-        let result = Line::new(3, 8, 5, "L").get_relative_end_x_y_position();
-
-        assert_eq!(result, expected);
-    }
-
-    #[test]
-    fn test_get_relative_end_x_y_position_up() {
-        let expected = (8, 5);
-
-        let result = Line::new(0, 5, 8, "U").get_relative_end_x_y_position();
 
         assert_eq!(result, expected);
     }
