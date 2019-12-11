@@ -1,10 +1,10 @@
 use super::line::{Direction, Line};
 
 #[derive(Debug, PartialEq)]
-struct Wire {
-    pub lines: Vec<Line>,
-    horizontal_lines: Vec<Line>,
-    vertical_lines: Vec<Line>,
+pub struct Wire {
+    pub lines: Vec<(Line, i32)>,
+    horizontal_lines: Vec<(Line, i32)>,
+    vertical_lines: Vec<(Line, i32)>,
 }
 
 impl Wire {
@@ -19,7 +19,17 @@ impl Wire {
         other
             .lines
             .iter()
-            .map(|temp_line| self.line_intersection_distance(temp_line))
+            .map(|(temp_line, _)| self.line_intersection_distance(temp_line))
+            .filter(|distance| distance.is_some())
+            .map(|distance| distance.unwrap())
+            .min()
+    }
+
+    pub fn best_time_intersection_distance(&self, other: &Wire) -> Option<i32> {
+        other
+            .lines
+            .iter()
+            .map(|(temp_line, temp_time)| self.best_time_line_intersection(temp_line, *temp_time))
             .filter(|distance| distance.is_some())
             .map(|distance| distance.unwrap())
             .min()
@@ -33,38 +43,64 @@ impl Wire {
             Direction::Right | Direction::Left => self.vertical_lines.iter(),
         };
 
-        let minimum_line_intersection = lines_iter
+        lines_iter
             // filter if line.offset is in temp_line range
-            .filter(|temp_line| {
+            .filter(|(temp_line, _)| {
                 temp_line.start_range <= line.offset && line.offset <= temp_line.end_range
             })
-            // filter if horizontal_line.offset is in vertical_line range
-            .filter(|temp_line| {
+            // filter if temp_line.offset is in line range
+            .filter(|(temp_line, _)| {
                 line.start_range <= temp_line.offset && temp_line.offset <= line.end_range
             })
             // make sure both offsets are not 0
-            .filter(|temp_line| line.offset != 0 && temp_line.offset != 0)
-            // find min by horizontal_line.offset
-            .min_by(|line1, line2| line1.offset.cmp(&line2.offset));
+            .filter(|(temp_line, _)| line.offset != 0 || temp_line.offset != 0)
+            // Convert to manhattan
+            .map(|(temp_line, _)| temp_line.offset.abs() + line.offset.abs())
+            // find min by temp_line.offset
+            .min()
+    }
 
-        match minimum_line_intersection {
-            Some(temp_line) => Some(line.offset.abs() + temp_line.offset.abs()),
-            None => None,
-        }
+    fn best_time_line_intersection(&self, line: &Line, time_to_reach: i32) -> Option<i32> {
+        // If line is vertical, iterate the horizontal lines
+        // If line is horizontal, iterate the vertical lines
+        let lines_iter = match line.direction {
+            Direction::Up | Direction::Down => self.horizontal_lines.iter(),
+            Direction::Right | Direction::Left => self.vertical_lines.iter(),
+        };
+
+        lines_iter
+            // filter if line.offset is in temp_line range
+            .filter(|(temp_line, _)| {
+                temp_line.start_range <= line.offset && line.offset <= temp_line.end_range
+            })
+            // filter if temp_line.offset is in line range
+            .filter(|(temp_line, _)| {
+                line.start_range <= temp_line.offset && temp_line.offset <= line.end_range
+            })
+            // make sure both offsets are not 0
+            .filter(|(temp_line, _)| line.offset != 0 || temp_line.offset != 0)
+            // Convert to time to reach
+            .map(|(_, temp_time_to_reach)| time_to_reach + temp_time_to_reach)
+            // find min by temp_line.offset
+            .min()
     }
 }
 
 impl From<&[String]> for Wire {
     fn from(a: &[String]) -> Wire {
-        let mut lines: Vec<Line> = Vec::new();
-        let mut horizontal_lines: Vec<Line> = Vec::new();
-        let mut vertical_lines: Vec<Line> = Vec::new();
+        let mut lines: Vec<(Line, i32)> = Vec::new();
+        let mut horizontal_lines: Vec<(Line, i32)> = Vec::new();
+        let mut vertical_lines: Vec<(Line, i32)> = Vec::new();
 
         let mut current_end_x_y_endpoint: (i32, i32) = (0, 0);
+
+        let mut total_distance = 0;
 
         for s in a {
             let (direction_str, distance_str) = &s.split_at(1);
             let distance = distance_str.parse::<i32>().unwrap();
+
+            total_distance += distance;
 
             match direction_str {
                 &"R" => {
@@ -77,8 +113,8 @@ impl From<&[String]> for Wire {
                         direction_str,
                     );
 
-                    lines.push(line.clone());
-                    horizontal_lines.push(line);
+                    lines.push((line.clone(), total_distance));
+                    horizontal_lines.push((line, total_distance));
 
                     current_end_x_y_endpoint.0 = next_x_endpoint;
                 }
@@ -92,8 +128,8 @@ impl From<&[String]> for Wire {
                         direction_str,
                     );
 
-                    lines.push(line.clone());
-                    horizontal_lines.push(line);
+                    lines.push((line.clone(), total_distance));
+                    horizontal_lines.push((line, total_distance));
 
                     current_end_x_y_endpoint.0 = next_x_endpoint;
                 }
@@ -107,8 +143,8 @@ impl From<&[String]> for Wire {
                         direction_str,
                     );
 
-                    lines.push(line.clone());
-                    vertical_lines.push(line);
+                    lines.push((line.clone(), total_distance));
+                    vertical_lines.push((line, total_distance));
 
                     current_end_x_y_endpoint.1 = next_y_endpoint;
                 }
@@ -122,8 +158,8 @@ impl From<&[String]> for Wire {
                         direction_str,
                     );
 
-                    lines.push(line.clone());
-                    vertical_lines.push(line);
+                    lines.push((line.clone(), total_distance));
+                    vertical_lines.push((line, total_distance));
 
                     current_end_x_y_endpoint.1 = next_y_endpoint;
                 }
@@ -164,13 +200,19 @@ mod tests {
         ];
 
         let lines = vec![
-            Line::new(0, 8, 0, "R"),
-            Line::new(0, 5, 8, "U"),
-            Line::new(3, 8, 5, "L"),
-            Line::new(2, 5, 3, "D"),
+            (Line::new(0, 8, 0, "R"), 8),
+            (Line::new(0, 5, 8, "U"), 13),
+            (Line::new(3, 8, 5, "L"), 18),
+            (Line::new(2, 5, 3, "D"), 21),
         ];
-        let horizontal_lines = vec![Line::new(0, 8, 0, "R"), Line::new(3, 8, 5, "L")];
-        let vertical_lines = vec![Line::new(0, 5, 8, "U"), Line::new(2, 5, 3, "D")];
+        let horizontal_lines = vec![
+            (Line::new(0, 8, 0, "R"), 8),
+            (Line::new(3, 8, 5, "L"), 18)
+        ];
+        let vertical_lines = vec![
+            (Line::new(0, 5, 8, "U"), 13),
+            (Line::new(2, 5, 3, "D"), 21),
+        ];
 
         let expected = Wire {
             lines: lines,
@@ -189,44 +231,44 @@ mod tests {
             String::from("R75,D30,R83,U83,L12,D49,R71,U7,L72,U62,R66,U55,R34,D71,R55,D58,R83");
 
         let lines = vec![
-            Line::new(0, 75, 0, "R"),
-            Line::new(-30, 0, 75, "D"),
-            Line::new(75, 158, -30, "R"),
-            Line::new(-30, 53, 158, "U"),
-            Line::new(146, 158, 53, "L"),
-            Line::new(4, 53, 146, "D"),
-            Line::new(146, 217, 4, "R"),
-            Line::new(4, 11, 217, "U"),
-            Line::new(145, 217, 11, "L"),
-            Line::new(11, 73, 145, "U"),
-            Line::new(145, 211, 73, "R"),
-            Line::new(73, 128, 211, "U"),
-            Line::new(211, 245, 128, "R"),
-            Line::new(57, 128, 245, "D"),
-            Line::new(245, 300, 57, "R"),
-            Line::new(-1, 57, 300, "D"),
-            Line::new(300, 383, -1, "R"),
+            (Line::new(0, 75, 0, "R"), 75),
+            (Line::new(-30, 0, 75, "D"), 105),
+            (Line::new(75, 158, -30, "R"), 188),
+            (Line::new(-30, 53, 158, "U"), 271),
+            (Line::new(146, 158, 53, "L"), 283),
+            (Line::new(4, 53, 146, "D"), 332),
+            (Line::new(146, 217, 4, "R"), 403),
+            (Line::new(4, 11, 217, "U"), 410),
+            (Line::new(145, 217, 11, "L"), 482),
+            (Line::new(11, 73, 145, "U"), 544),
+            (Line::new(145, 211, 73, "R"), 610),
+            (Line::new(73, 128, 211, "U"), 665),
+            (Line::new(211, 245, 128, "R"), 699),
+            (Line::new(57, 128, 245, "D"), 770),
+            (Line::new(245, 300, 57, "R"), 825),
+            (Line::new(-1, 57, 300, "D"), 883),
+            (Line::new(300, 383, -1, "R"), 966),
         ];
         let horizontal_lines = vec![
-            Line::new(0, 75, 0, "R"),
-            Line::new(75, 158, -30, "R"),
-            Line::new(145, 211, 73, "R"),
-            Line::new(145, 217, 11, "L"),
-            Line::new(146, 158, 53, "L"),
-            Line::new(146, 217, 4, "R"),
-            Line::new(211, 245, 128, "R"),
-            Line::new(245, 300, 57, "R"),
-            Line::new(300, 383, -1, "R"),
+            (Line::new(0, 75, 0, "R"), 75),
+            (Line::new(75, 158, -30, "R"), 188),
+            (Line::new(145, 211, 73, "R"), 610),
+            (Line::new(145, 217, 11, "L"), 482),
+            (Line::new(146, 158, 53, "L"), 283),
+            (Line::new(146, 217, 4, "R"), 403),
+            (Line::new(211, 245, 128, "R"), 699),
+            (Line::new(245, 300, 57, "R"), 825),
+            (Line::new(300, 383, -1, "R"), 966),
         ];
         let vertical_lines = vec![
-            Line::new(-30, 0, 75, "D"),
-            Line::new(-30, 53, 158, "U"),
-            Line::new(-1, 57, 300, "D"),
-            Line::new(4, 11, 217, "U"),
-            Line::new(4, 53, 146, "D"),
-            Line::new(11, 73, 145, "U"),
-            Line::new(57, 128, 245, "D"),
-            Line::new(73, 128, 211, "U"),
+            (Line::new(-30, 0, 75, "D"), 105),
+            (Line::new(-30, 53, 158, "U"), 271),
+            (Line::new(-1, 57, 300, "D"), 883),
+            (Line::new(4, 11, 217, "U"), 410),
+            (Line::new(4, 53, 146, "D"), 332),
+            (Line::new(11, 73, 145, "U"), 544),
+            (Line::new(57, 128, 245, "D"), 770),
+            (Line::new(73, 128, 211, "U"), 665),
         ];
 
         let expected = Wire {
@@ -239,6 +281,34 @@ mod tests {
 
         assert_eq!(result, expected);
     }
+
+    #[test]
+    fn test_best_time_wires_intersect() {
+        let wire1 = Wire::new("R8,U5,L5,D3");
+        let wire2 = Wire::new("U7,R6,D4,L4");
+        let expected1 = Some(30);
+
+        let wire3 = Wire::new("R75,D30,R83,U83,L12,D49,R71,U7,L72");
+        let wire4 = Wire::new("U62,R66,U55,R34,D71,R55,D58,R83");
+        let expected2 = Some(610);
+
+        let wire5 = Wire::new("R98,U47,R26,D63,R33,U87,L62,D20,R33,U53,R51");
+        let wire6 = Wire::new("U98,R91,D20,R16,D67,R40,U7,R15,U6,R7");
+        let expected3 = Some(410);
+
+        assert_eq!(wire1.best_time_intersection_distance(&wire2), expected1);
+        assert_eq!(wire3.best_time_intersection_distance(&wire4), expected2);
+        assert_eq!(wire5.best_time_intersection_distance(&wire6), expected3);
+    }
+
+    #[test]
+    fn test_best_time_wires_dont_intersect() {
+        let wire1 = Wire::new("R8,U5,L5,D3");
+        let wire2 = Wire::new("U7,R6,U4,L4");
+
+        assert!(wire1.best_time_intersection_distance(&wire2).is_none());
+    }
+
 
     #[test]
     fn test_wires_intersect() {
