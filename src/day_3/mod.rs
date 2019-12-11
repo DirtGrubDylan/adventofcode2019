@@ -11,7 +11,7 @@ pub fn run_day_3() {
         Ok(moves) => {
             run_part_1(&moves);
             run_part_2(&moves);
-        },
+        }
         Err(error) => panic!("Error parsing file: {:?}", error),
     }
 }

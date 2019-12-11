@@ -213,14 +213,8 @@ mod tests {
             (Line::new(3, 8, 5, "L"), 18),
             (Line::new(2, 5, 3, "D"), 21),
         ];
-        let horizontal_lines = vec![
-            (Line::new(0, 8, 0, "R"), 8),
-            (Line::new(3, 8, 5, "L"), 18)
-        ];
-        let vertical_lines = vec![
-            (Line::new(0, 5, 8, "U"), 13),
-            (Line::new(2, 5, 3, "D"), 21),
-        ];
+        let horizontal_lines = vec![(Line::new(0, 8, 0, "R"), 8), (Line::new(3, 8, 5, "L"), 18)];
+        let vertical_lines = vec![(Line::new(0, 5, 8, "U"), 13), (Line::new(2, 5, 3, "D"), 21)];
 
         let expected = Wire {
             lines: lines,
@@ -316,7 +310,6 @@ mod tests {
 
         assert!(wire1.best_time_intersection_distance(&wire2).is_none());
     }
-
 
     #[test]
     fn test_wires_intersect() {
@@ -489,6 +482,4 @@ mod tests {
 
         assert!(result.is_none());
     }
-
-
 }
