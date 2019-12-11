@@ -48,7 +48,7 @@ impl Wire {
             .min_by(|line1, line2| line1.offset.cmp(&line2.offset));
 
         match minimum_line_intersection {
-            Some(temp_line) => Some(line.offset + temp_line.offset),
+            Some(temp_line) => Some(line.offset.abs() + temp_line.offset.abs()),
             None => None,
         }
     }
@@ -250,8 +250,13 @@ mod tests {
         let wire4 = Wire::new("U62,R66,U55,R34,D71,R55,D58,R83");
         let expected2 = Some(159);
 
+        let wire5 = Wire::new("R98,U47,R26,D63,R33,U87,L62,D20,R33,U53,R51");
+        let wire6 = Wire::new("U98,R91,D20,R16,D67,R40,U7,R15,U6,R7");
+        let expected3 = Some(135);
+
         assert_eq!(wire1.intersection_distance(&wire2), expected1);
         assert_eq!(wire3.intersection_distance(&wire4), expected2);
+        assert_eq!(wire5.intersection_distance(&wire6), expected3);
     }
 
     #[test]
