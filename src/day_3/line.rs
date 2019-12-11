@@ -31,6 +31,13 @@ impl Line {
             direction: direction,
         }
     }
+
+    pub fn distance_from_point_to_end(&self, point: i32) -> i32 {
+        match self.direction {
+            Direction::Right | Direction::Up => (self.end_range - point).abs(),
+            Direction::Left | Direction::Down => (self.start_range - point).abs(),
+        }
+    }
 }
 
 #[cfg(test)]
@@ -129,5 +136,49 @@ mod test {
         lines.sort();
 
         assert_eq!(lines, expected);
+    }
+
+    #[test]
+    fn test_distance_from_point_to_end_right() {
+        let line = Line::new(0, 8, 0, "R");
+
+        let expected = 3;
+
+        let result = line.distance_from_point_to_end(5);
+
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_distance_from_point_to_end_up() {
+        let line = Line::new(0, 7, 0, "U");
+
+        let expected = 2;
+
+        let result = line.distance_from_point_to_end(5);
+
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_distance_from_point_to_end_left() {
+        let line = Line::new(3, 8, 5, "L");
+
+        let expected = 3;
+
+        let result = line.distance_from_point_to_end(6);
+
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_distance_from_point_to_end_down() {
+        let line = Line::new(2, 5, 3, "D");
+
+        let expected = 1;
+
+        let result = line.distance_from_point_to_end(3);
+
+        assert_eq!(result, expected);
     }
 }

@@ -80,7 +80,15 @@ impl Wire {
             // make sure both offsets are not 0
             .filter(|(temp_line, _)| line.offset != 0 || temp_line.offset != 0)
             // Convert to time to reach
-            .map(|(_, temp_time_to_reach)| time_to_reach + temp_time_to_reach)
+            .map(|(temp_line, temp_time_to_reach)| {
+                let line_time_to_reach_intersection =
+                    time_to_reach - line.distance_from_point_to_end(temp_line.offset);
+
+                let temp_line_time_to_reach_intersection =
+                    temp_time_to_reach - temp_line.distance_from_point_to_end(line.offset);
+
+                line_time_to_reach_intersection + temp_line_time_to_reach_intersection
+            })
             // find min by temp_line.offset
             .min()
     }
@@ -418,4 +426,69 @@ mod tests {
 
         assert!(result.is_none());
     }
+
+    #[test]
+    fn test_vertical_line_intersects_best_time() {
+        let wire = Wire::new("R8,U5,L5,D3");
+
+        // U7,R6,D4
+        let line = Line::new(3, 7, 6, "D");
+
+        let expected = Some(30);
+
+        let result = wire.best_time_line_intersection(&line, 17);
+
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_vertical_line_doesnt_intersect_best_time() {
+        let wire = Wire::new("R8,U5,L5,D3");
+
+        // U7,R1,D6
+        let line = Line::new(1, 7, 1, "D");
+
+        let result = wire.best_time_line_intersection(&line, 14);
+
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn test_horizontal_line_intersects_best_time() {
+        let wire = Wire::new("R8,U5,L5,D3");
+
+        // U7,R6,D4,L4
+        let line = Line::new(2, 6, 3, "L");
+
+        let expected = Some(40);
+
+        let result = wire.best_time_line_intersection(&line, 21);
+
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_horizontal_line_doesnt_intersect_best_time() {
+        let wire = Wire::new("R8,U5,L5,D3");
+
+        // U7,R6
+        let line = Line::new(0, 6, 7, "R");
+
+        let result = wire.best_time_line_intersection(&line, 13);
+
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn test_origin_line_doesnt_intersect_best_time() {
+        let wire = Wire::new("R8,U5,L5,D3");
+
+        let line = Line::new(0, 7, 0, "U");
+
+        let result = wire.best_time_line_intersection(&line, 7);
+
+        assert!(result.is_none());
+    }
+
+
 }
