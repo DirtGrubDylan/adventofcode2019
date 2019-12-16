@@ -2,7 +2,7 @@ use super::possible_passwords::PossiblePasswordMap;
 
 #[derive(Debug, PartialEq)]
 pub struct PossiblePasswordFinder {
-    map: PossiblePasswordMap,
+    pub map: PossiblePasswordMap,
 }
 
 impl PossiblePasswordFinder {
@@ -22,8 +22,6 @@ impl PossiblePasswordFinder {
     }
 
     fn number_of_double_digit_passwords_up_to(&self, excluded_upper_bound: i32) -> i32 {
-        // for last digit, if greater than next to last than add last_digit - next_to_last in result
-
         let int_vector_with_magnitudes =
             Self::int_to_vector_with_magnitude_of_ten(excluded_upper_bound);
 
@@ -31,21 +29,30 @@ impl PossiblePasswordFinder {
             return 0;
         }
 
+        let mut prior_starting_digit = 0;
         let mut result = 0;
-        let mut prior_significant_digit = 0;
 
-        for (significant_digit, magnitude_of_ten) in int_vector_with_magnitudes {
-            if prior_significant_digit > significant_digit {
+        for (starting_digit, length) in int_vector_with_magnitudes {
+            if prior_starting_digit > starting_digit {
                 break;
-            } else if magnitude_of_ten == 0 {
-                result += (significant_digit - prior_significant_digit) as i32;
-            } else {
-                result += self
-                    .map
-                    .number_of_double_digit_values_up_to(significant_digit, magnitude_of_ten);
+            } else if length == 0 {
+                result += (starting_digit - prior_starting_digit) as i32;
+            } else if prior_starting_digit == 0 {
+                result += self.map.number_of_double_digit_values_between(
+                    prior_starting_digit,
+                    starting_digit,
+                    length,
+                );
+            } else if prior_starting_digit < starting_digit {
+                result += self.map.map[prior_starting_digit][length].increasing_digits_in_range
+                    + self.map.number_of_double_digit_values_between(
+                        prior_starting_digit + 1,
+                        starting_digit,
+                        length,
+                    );
             }
 
-            prior_significant_digit = significant_digit;
+            prior_starting_digit = starting_digit;
         }
 
         result
@@ -90,18 +97,27 @@ mod test {
 
     #[test]
     fn test_number_of_double_digit_passwords_between() {
-        let possible_password_finder = PossiblePasswordFinder::new(3);
+        let possible_password_finder = PossiblePasswordFinder::new(6);
 
-        let expected = 61;
+        let expected_1 = 56;
+        let result_1 = possible_password_finder.number_of_double_digit_passwords_between(223, 778);
 
-        let result = possible_password_finder.number_of_double_digit_passwords_between(223, 778);
+        let expected_2 = 454;
+        let result_2 =
+            possible_password_finder.number_of_double_digit_passwords_between(402328, 864247);
 
-        assert_eq!(result, expected);
+        let expected_3 = 1330;
+        let result_3 =
+            possible_password_finder.number_of_double_digit_passwords_between(231832, 767356);
+
+        assert_eq!(result_1, expected_1);
+        assert_eq!(result_2, expected_2);
+        assert_eq!(result_3, expected_3);
     }
 
     #[test]
     fn test_number_of_double_digit_passwords_up_to() {
-        let possible_password_finder = PossiblePasswordFinder::new(3);
+        let possible_password_finder = PossiblePasswordFinder::new(6);
 
         let expected_1 = 0;
         let result_1 = possible_password_finder.number_of_double_digit_passwords_up_to(0);
@@ -124,6 +140,15 @@ mod test {
         let expected_7 = 89;
         let result_7 = possible_password_finder.number_of_double_digit_passwords_up_to(999);
 
+        let expected_8 = 2851;
+        let result_8 = possible_password_finder.number_of_double_digit_passwords_up_to(200000);
+
+        let expected_9 = 1179;
+        let result_9 = possible_password_finder.number_of_double_digit_passwords_up_to(030000);
+
+        let expected_10 = 284;
+        let result_10 = possible_password_finder.number_of_double_digit_passwords_up_to(003000);
+
         assert_eq!(result_1, expected_1);
         assert_eq!(result_2, expected_2);
         assert_eq!(result_3, expected_3);
@@ -131,6 +156,9 @@ mod test {
         assert_eq!(result_5, expected_5);
         assert_eq!(result_6, expected_6);
         assert_eq!(result_7, expected_7);
+        assert_eq!(result_8, expected_8);
+        assert_eq!(result_9, expected_9);
+        assert_eq!(result_10, expected_10);
     }
 
     #[test]
