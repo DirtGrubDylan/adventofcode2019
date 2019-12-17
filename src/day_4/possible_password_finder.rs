@@ -58,6 +58,28 @@ impl PossiblePasswordFinder {
         result
     }
 
+    fn number_of_triple_digit_passwords_up_to(&self, excluded_upper_bound: i32) -> i32 {
+        let int_vector_with_magnitudes =
+            Self::int_to_vector_with_magnitude_of_ten(excluded_upper_bound);
+
+        if int_vector_with_magnitudes.len() <= 2 {
+            return 0;
+        }
+
+        let mut prior_starting_digit = 0;
+        let mut result = 0;
+
+        for (starting_digit, length) in int_vector_with_magnitudes {
+            if prior_starting_digit > starting_digit {
+                break;
+            } else if length == 1 {
+            } else if length == 0 {
+            }
+        }
+
+        result
+    }
+
     fn int_to_vector_with_magnitude_of_ten(int_to_convert: i32) -> Vec<(usize, usize)> {
         let mut result = Vec::new();
         let mut magnitude_of_ten = 0;
@@ -159,6 +181,33 @@ mod test {
         assert_eq!(result_8, expected_8);
         assert_eq!(result_9, expected_9);
         assert_eq!(result_10, expected_10);
+    }
+
+    #[test]
+    fn test_number_of_triple_digit_passwords_up_to() {
+        let possible_password_finder = PossiblePasswordFinder::new(6);
+
+        let expected_1 = 0;
+        let result_1 = possible_password_finder.number_of_triple_digit_passwords_up_to(0);
+
+        let expected_2 = 1;
+        let result_2 = possible_password_finder.number_of_double_digit_passwords_up_to(100);
+
+        let expected_3 = 4;
+        let result_3 = possible_password_finder.number_of_double_digit_passwords_up_to(554);
+
+        let expected_4 = 81;
+        let result_4 = possible_password_finder.number_of_double_digit_passwords_up_to(7761);
+
+        // 81 + 3 + 1
+        let expected_5 = 85;
+        let result_5 = possible_password_finder.number_of_double_digit_passwords_up_to(7789);
+
+        assert_eq!(result_1, expected_1);
+        assert_eq!(result_2, expected_2);
+        assert_eq!(result_3, expected_3);
+        assert_eq!(result_4, expected_4);
+        assert_eq!(result_5, expected_5);
     }
 
     #[test]

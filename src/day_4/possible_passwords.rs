@@ -183,14 +183,18 @@ impl PossiblePasswordMap {
             return self.map[starting_digit][length - 1].triple_digits_in_extended_range;
         }
 
-        let all_increasing_digits_with_starting_digit_two_less_length =
-            self.map[starting_digit][0..(length - 1)].iter()
-                .fold(0, |acc, pp| acc + pp.increasing_digits_in_range - pp.double_digits_in_range);
+        let all_increasing_digits_with_starting_digit_two_less_length = self.map[starting_digit]
+            [0..(length - 1)]
+            .iter()
+            .fold(0, |acc, pp| {
+                acc + pp.increasing_digits_in_range - pp.double_digits_in_range
+            });
 
         if starting_digit < 9 {
-            let all_triple_digits_above_starting_digit_one_less_length =
-                self.map[starting_digit + 1][0..length].iter()
-                    .fold(0, |acc, pp| acc + pp.triple_digits_in_extended_range);
+            let all_triple_digits_above_starting_digit_one_less_length = self.map
+                [starting_digit + 1][0..length]
+                .iter()
+                .fold(0, |acc, pp| acc + pp.triple_digits_in_extended_range);
 
             let flipped_triple_digits_to_double_digits =
                 self.map[starting_digit + 1][length - 2].triple_digits_in_extended_range;
@@ -463,7 +467,6 @@ mod test {
 
         let expected_8 = 8;
         let result_8 = possible_password_map.get_number_of_triple_digits_for(7, 4);
-
 
         assert_eq!(result_1, expected_1);
         assert_eq!(result_2, expected_2);
