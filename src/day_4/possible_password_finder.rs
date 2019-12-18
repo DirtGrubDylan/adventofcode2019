@@ -3,12 +3,14 @@ use super::possible_passwords::PossiblePasswordMap;
 #[derive(Debug, PartialEq)]
 pub struct PossiblePasswordFinder {
     pub map: PossiblePasswordMap,
+    password_length: usize,
 }
 
 impl PossiblePasswordFinder {
     pub fn new(password_length: usize) -> PossiblePasswordFinder {
         PossiblePasswordFinder {
             map: PossiblePasswordMap::new(password_length),
+            password_length: password_length,
         }
     }
 
@@ -110,7 +112,10 @@ mod test {
     fn test_new() {
         let map = PossiblePasswordMap::new(3);
 
-        let expected = PossiblePasswordFinder { map: map };
+        let expected = PossiblePasswordFinder { 
+            map: map,
+            password_length: 3,
+        };
 
         let result = PossiblePasswordFinder::new(3);
 
