@@ -68,15 +68,58 @@ impl PossiblePasswordFinder {
             return 0;
         }
 
-        let mut prior_starting_digit = 0;
+        let mut prior_starting_digit = 9;
+        let mut excluded_triple_digits_length = 0;
         let mut result = 0;
 
         for (starting_digit, length) in int_vector_with_magnitudes {
-            if prior_starting_digit > starting_digit {
-                break;
-            } else if length == 1 {
-            } else if length == 0 {
+            if prior_starting_digit >= starting_digit {
+                continue;
             }
+
+            let number_of_strict_increasing_for_starting_digit_inclusive = self.number_of_strict_increasing_inclusive(starting_digit, length);
+
+            if length <= 1 {
+                result += number_of_strict_increasing_for_starting_digit_inclusive
+                    + self.number_of_strict_increasing_between(prior_starting_digit + 1, starting_digit, length);
+            } else if prior_starting_digit == 0 {
+                result += self.map.number_of_triple_digit_values_between(
+                    prior_starting_digit,
+                    starting_digit,
+                    length);
+
+                excluded_triple_digits_length = length - 2;
+            }
+
+            result += number_of_strict_increasing_for_starting_digit_inclusive;
+
+            prior_starting_digit = starting_digit;
+        }
+
+        result
+    }
+
+    fn number_of_strict_increasing_inclusive(&self, starting_digit: usize, length: usize) -> i32 {
+        let mut result = 0;
+
+        for temp_length in 0..(length + 1) {
+            result +=
+                self.map.map[starting_digit][temp_length].increasing_digits_in_range
+                    - self.map.map[starting_digit][temp_length].double_digits_in_range;
+
+        }
+
+        result
+    }
+
+    fn number_of_strict_increasing_between(&self, upper_bound_including: usize, lower_bound_excluding: usize, length: usize) -> i32 {
+        let mut result = 0;
+
+        for temp_digit in upper_bound_including..lower_bound_excluding {
+            result +=
+                self.map.map[temp_digit][length].increasing_digits_in_range
+                    - self.map.map[temp_digit][length].double_digits_in_range;
+
         }
 
         result
@@ -112,7 +155,7 @@ mod test {
     fn test_new() {
         let map = PossiblePasswordMap::new(3);
 
-        let expected = PossiblePasswordFinder { 
+        let expected = PossiblePasswordFinder {
             map: map,
             password_length: 3,
         };
@@ -195,24 +238,51 @@ mod test {
         let expected_1 = 0;
         let result_1 = possible_password_finder.number_of_triple_digit_passwords_up_to(0);
 
-        let expected_2 = 1;
-        let result_2 = possible_password_finder.number_of_double_digit_passwords_up_to(100);
+        let expected_2 = 0;
+        let result_2 = possible_password_finder.number_of_triple_digit_passwords_up_to(100);
 
         let expected_3 = 4;
-        let result_3 = possible_password_finder.number_of_double_digit_passwords_up_to(554);
+        let result_3 = possible_password_finder.number_of_triple_digit_passwords_up_to(554);
 
         let expected_4 = 81;
-        let result_4 = possible_password_finder.number_of_double_digit_passwords_up_to(7761);
+        let result_4 = possible_password_finder.number_of_triple_digit_passwords_up_to(7761);
 
-        // 81 + 3 + 1
         let expected_5 = 85;
-        let result_5 = possible_password_finder.number_of_double_digit_passwords_up_to(7789);
+        let result_5 = possible_password_finder.number_of_triple_digit_passwords_up_to(7789);
+
+        let expected_6 = 418;
+        let result_6 = possible_password_finder.number_of_triple_digit_passwords_up_to(79999);
+
+        let expected_7 = 1051;
+        let result_7 = possible_password_finder.number_of_triple_digit_passwords_up_to(345678);
 
         assert_eq!(result_1, expected_1);
         assert_eq!(result_2, expected_2);
         assert_eq!(result_3, expected_3);
         assert_eq!(result_4, expected_4);
         assert_eq!(result_5, expected_5);
+        assert_eq!(result_6, expected_6);
+        assert_eq!(result_7, expected_7);
+    }
+
+    #[test]
+    fn test_number_of_strict_increasing_inclusive() {
+        let possible_password_finder = PossiblePasswordFinder::new(6);
+
+        let expected = 4;
+        let result = possible_password_finder.number_of_strict_increasing_inclusive(7, 3);
+
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_number_of_strict_increasing_between() {
+        let possible_password_finder = PossiblePasswordFinder::new(6);
+
+        let expected = 7;
+        let result = possible_password_finder.number_of_strict_increasing_between(5, 7, 1);
+
+        assert_eq!(result, expected);
     }
 
     #[test]
