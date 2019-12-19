@@ -23,6 +23,27 @@ impl PossiblePasswordFinder {
             - self.number_of_double_digit_passwords_up_to(lower_bound_including)
     }
 
+    pub fn number_of_triple_digit_passwords_between(
+        &self,
+        lower_bound_including: i32,
+        upper_bound_including: i32,
+    ) -> i32 {
+        self.number_of_triple_digit_passwords_up_to(upper_bound_including + 1)
+            - self.number_of_triple_digit_passwords_up_to(lower_bound_including)
+    }
+
+    pub fn number_of_non_triple_double_digit_passwords_between(
+        &self,
+        lower_bound_including: i32,
+        upper_bound_including: i32,
+    ) -> i32 {
+        self.number_of_double_digit_passwords_between(lower_bound_including, upper_bound_including)
+            - self.number_of_triple_digit_passwords_between(
+                lower_bound_including,
+                upper_bound_including,
+            )
+    }
+
     fn number_of_double_digit_passwords_up_to(&self, excluded_upper_bound: i32) -> i32 {
         let int_vector_with_magnitudes =
             Self::int_to_vector_with_magnitude_of_ten(excluded_upper_bound);
@@ -68,32 +89,65 @@ impl PossiblePasswordFinder {
             return 0;
         }
 
-        let mut prior_starting_digit = 9;
-        let mut excluded_triple_digits_length = 0;
+        let mut prior_starting_digit = 0;
+        let mut excluded_triple_digit_length = 0;
+        let mut excluded_increasing_digit_length = 0;
         let mut result = 0;
 
         for (starting_digit, length) in int_vector_with_magnitudes {
-            if prior_starting_digit >= starting_digit {
+            if prior_starting_digit > starting_digit {
+                break;
+            } else if prior_starting_digit == starting_digit {
                 continue;
             }
 
-            let number_of_strict_increasing_for_starting_digit_inclusive = self.number_of_strict_increasing_inclusive(starting_digit, length);
-
-            if length <= 1 {
-                result += number_of_strict_increasing_for_starting_digit_inclusive
-                    + self.number_of_strict_increasing_between(prior_starting_digit + 1, starting_digit, length);
-            } else if prior_starting_digit == 0 {
+            if prior_starting_digit == 0 {
                 result += self.map.number_of_triple_digit_values_between(
                     prior_starting_digit,
                     starting_digit,
-                    length);
+                    length,
+                );
 
-                excluded_triple_digits_length = length - 2;
+                excluded_triple_digit_length = length - 2;
+                excluded_increasing_digit_length = length - 1;
+                prior_starting_digit = starting_digit;
+
+                continue;
             }
 
-            result += number_of_strict_increasing_for_starting_digit_inclusive;
+            if (length != 0) && (prior_starting_digit != 0) {
+                result += self.number_of_strict_increasing_inclusive(
+                    prior_starting_digit,
+                    excluded_increasing_digit_length - 1,
+                );
+            }
 
-            prior_starting_digit = starting_digit;
+            if length == excluded_triple_digit_length {
+                break;
+            } else if length <= 1 {
+                result += self.number_of_strict_increasing_between(
+                    prior_starting_digit + 1,
+                    starting_digit,
+                    length,
+                );
+            } else {
+                let temp_length_range = length.min(excluded_triple_digit_length);
+
+                for temp_length in 0..temp_length_range {
+                    result += self.map.map[prior_starting_digit + 1][temp_length]
+                        .triple_digits_in_extended_range;
+                }
+
+                result += self.map.number_of_triple_digit_values_between(
+                    prior_starting_digit + 1,
+                    starting_digit,
+                    length,
+                );
+
+                prior_starting_digit = starting_digit;
+                excluded_increasing_digit_length = length - 1;
+                excluded_triple_digit_length = length - 2;
+            }
         }
 
         result
@@ -103,23 +157,24 @@ impl PossiblePasswordFinder {
         let mut result = 0;
 
         for temp_length in 0..(length + 1) {
-            result +=
-                self.map.map[starting_digit][temp_length].increasing_digits_in_range
-                    - self.map.map[starting_digit][temp_length].double_digits_in_range;
-
+            result += self.map.map[starting_digit][temp_length].increasing_digits_in_range
+                - self.map.map[starting_digit][temp_length].double_digits_in_range;
         }
 
         result
     }
 
-    fn number_of_strict_increasing_between(&self, upper_bound_including: usize, lower_bound_excluding: usize, length: usize) -> i32 {
+    fn number_of_strict_increasing_between(
+        &self,
+        upper_bound_including: usize,
+        lower_bound_excluding: usize,
+        length: usize,
+    ) -> i32 {
         let mut result = 0;
 
         for temp_digit in upper_bound_including..lower_bound_excluding {
-            result +=
-                self.map.map[temp_digit][length].increasing_digits_in_range
-                    - self.map.map[temp_digit][length].double_digits_in_range;
-
+            result += self.map.map[temp_digit][length].increasing_digits_in_range
+                - self.map.map[temp_digit][length].double_digits_in_range;
         }
 
         result
@@ -186,6 +241,37 @@ mod test {
     }
 
     #[test]
+    fn test_number_of_triple_digit_passwords_between() {
+        let possible_password_finder = PossiblePasswordFinder::new(6);
+
+        let expected_1 = 5;
+        let result_1 = possible_password_finder.number_of_triple_digit_passwords_between(223, 778);
+
+        let expected_2 = 166;
+        let result_2 =
+            possible_password_finder.number_of_triple_digit_passwords_between(402328, 864247);
+
+        assert_eq!(result_1, expected_1);
+        assert_eq!(result_2, expected_2);
+    }
+
+    #[test]
+    fn test_number_of_non_triple_double_digit_passwords_between() {
+        let possible_password_finder = PossiblePasswordFinder::new(6);
+
+        let expected_1 = 51;
+        let result_1 =
+            possible_password_finder.number_of_non_triple_double_digit_passwords_between(223, 778);
+
+        let expected_2 = 288;
+        let result_2 = possible_password_finder
+            .number_of_non_triple_double_digit_passwords_between(402328, 864247);
+
+        assert_eq!(result_1, expected_1);
+        assert_eq!(result_2, expected_2);
+    }
+
+    #[test]
     fn test_number_of_double_digit_passwords_up_to() {
         let possible_password_finder = PossiblePasswordFinder::new(6);
 
@@ -247,14 +333,23 @@ mod test {
         let expected_4 = 81;
         let result_4 = possible_password_finder.number_of_triple_digit_passwords_up_to(7761);
 
-        let expected_5 = 85;
+        let expected_5 = 84;
         let result_5 = possible_password_finder.number_of_triple_digit_passwords_up_to(7789);
 
         let expected_6 = 418;
         let result_6 = possible_password_finder.number_of_triple_digit_passwords_up_to(79999);
 
-        let expected_7 = 1051;
-        let result_7 = possible_password_finder.number_of_triple_digit_passwords_up_to(345678);
+        let expected_7 = 1295;
+        let result_7 = possible_password_finder.number_of_triple_digit_passwords_up_to(999999);
+
+        let expected_8 = 1051;
+        let result_8 = possible_password_finder.number_of_triple_digit_passwords_up_to(345678);
+
+        let expected_9 = 79;
+        let result_9 = possible_password_finder.number_of_triple_digit_passwords_up_to(6789);
+
+        let expected_10 = 1125;
+        let result_10 = possible_password_finder.number_of_triple_digit_passwords_up_to(402328);
 
         assert_eq!(result_1, expected_1);
         assert_eq!(result_2, expected_2);
@@ -263,6 +358,9 @@ mod test {
         assert_eq!(result_5, expected_5);
         assert_eq!(result_6, expected_6);
         assert_eq!(result_7, expected_7);
+        assert_eq!(result_8, expected_8);
+        assert_eq!(result_9, expected_9);
+        assert_eq!(result_10, expected_10);
     }
 
     #[test]
