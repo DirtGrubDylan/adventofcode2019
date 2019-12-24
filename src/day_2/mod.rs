@@ -1,4 +1,5 @@
-mod intcode_computer;
+pub mod intcode_computer;
+pub mod intcode_instruction;
 
 use crate::file_reader::to_string_vector;
 use intcode_computer::IntcodeComputer;
