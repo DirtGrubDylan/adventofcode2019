@@ -26,7 +26,9 @@ fn find_first_solution(program: &str) {
     intcode_computer.replace_code_in_program(1, 12);
     intcode_computer.replace_code_in_program(2, 2);
 
-    let first_value = intcode_computer.run_program()[0];
+    let (new_memory, _) = intcode_computer.run_program(0);
+
+    let first_value = new_memory[0];
 
     println!("Part 1 Solution is: {:?}", first_value);
 }
@@ -40,7 +42,7 @@ fn find_second_solution(program: &str, target: i32, largest_noun: i32, largest_v
 
     let mut noun = 0;
 
-    while noun <= largest_noun && solution.is_err() {
+    while (noun <= largest_noun) && solution.is_err() {
         let mut verb_upper_bound = largest_verb;
         let mut verb_lower_bound = 0;
 
@@ -50,7 +52,9 @@ fn find_second_solution(program: &str, target: i32, largest_noun: i32, largest_v
             intcode_computer.replace_code_in_program(1, noun);
             intcode_computer.replace_code_in_program(2, verb);
 
-            let output = intcode_computer.run_program()[0];
+            let (new_memory, _) = intcode_computer.run_program(0);
+
+            let output = new_memory[0];
 
             if output == target {
                 solution = Ok(100 * noun + verb);

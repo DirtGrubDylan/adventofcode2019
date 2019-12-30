@@ -1,3 +1,5 @@
+use super::intcode_instruction::Opcode;
+
 #[derive(Debug, PartialEq)]
 pub struct IntcodeComputer {
     program: Vec<i32>,
@@ -11,52 +13,30 @@ impl IntcodeComputer {
         args.into()
     }
 
-    pub fn run_program(&self) -> Vec<i32> {
+    pub fn run_program(&self, user_input: i32) -> (Vec<i32>, Vec<i32>) {
         let mut result: Vec<i32> = self.program.clone();
+        let mut output_values = Vec::new();
 
         let mut index: usize = 0;
 
-        while index < result.len() {
-            match result.get(index) {
-                Some(1) => Self::run_opcode_1(&mut result, index),
-                Some(2) => Self::run_opcode_2(&mut result, index),
-                Some(99) => break,
-                _ => panic!(
-                    "Something went horribly wrong for `run_program` at index {:?}!",
-                    index
-                ),
+        let mut opcode = Opcode::new(user_input, &result, index);
+
+        while let Some((opcode_execution_result, next_index)) = opcode.execute(&mut result, index) {
+            if let Opcode::Output(_) = opcode {
+                output_values.push(opcode_execution_result);
             }
 
-            index += 4;
+            index = next_index;
+            opcode = Opcode::new(user_input, &result, index);
         }
 
-        result
+        (result, output_values)
     }
 
     pub fn replace_code_in_program(&mut self, code_index: usize, new_value: i32) {
         if let Some(code) = self.program.get_mut(code_index) {
             *code = new_value;
         }
-    }
-
-    fn run_opcode_1(program: &mut [i32], opcode_index: usize) {
-        let first_fetch_index = program[opcode_index + 1] as usize;
-        let second_fetch_index = program[opcode_index + 2] as usize;
-        let set_index = program[opcode_index + 3] as usize;
-
-        let sum_result = program[first_fetch_index] + program[second_fetch_index];
-
-        program[set_index] = sum_result;
-    }
-
-    fn run_opcode_2(program: &mut [i32], opcode_index: usize) {
-        let first_fetch_index = program[opcode_index + 1] as usize;
-        let second_fetch_index = program[opcode_index + 2] as usize;
-        let set_index = program[opcode_index + 3] as usize;
-
-        let product_result = program[first_fetch_index] * program[second_fetch_index];
-
-        program[set_index] = product_result;
     }
 }
 
@@ -135,34 +115,13 @@ mod tests {
     }
 
     #[test]
-    fn test_run_opcode_1() {
-        let mut values = vec![1, 1, 1, 4, 99, 5, 6, 0, 99];
-
-        let expected = vec![1, 1, 1, 4, 2, 5, 6, 0, 99];
-
-        IntcodeComputer::run_opcode_1(&mut values, 0);
-
-        assert_eq!(values, expected);
-    }
-
-    #[test]
-    fn test_run_opcode_2() {
-        let mut values = vec![2, 4, 4, 5, 99, 0];
-
-        let expected = vec![2, 4, 4, 5, 99, 9801];
-
-        IntcodeComputer::run_opcode_2(&mut values, 0);
-
-        assert_eq!(values, expected);
-    }
-
-    #[test]
     fn test_run_program_opcode_1() {
         let intcode_computer = IntcodeComputer::new(vec![1, 1, 1, 4, 99, 5, 6, 0, 99].as_slice());
+        let user_input = 0;
 
         let expected = vec![30, 1, 1, 4, 2, 5, 6, 0, 99];
 
-        let result = intcode_computer.run_program();
+        let (result, _) = intcode_computer.run_program(user_input);
 
         assert_eq!(result, expected);
     }
@@ -170,10 +129,11 @@ mod tests {
     #[test]
     fn test_run_program_opcode_2() {
         let intcode_computer = IntcodeComputer::new(vec![2, 4, 4, 5, 99, 0].as_slice());
+        let user_input = 0;
 
         let expected = vec![2, 4, 4, 5, 99, 9801];
 
-        let result = intcode_computer.run_program();
+        let (result, _) = intcode_computer.run_program(user_input);
 
         assert_eq!(result, expected);
     }
@@ -187,12 +147,13 @@ mod tests {
             .split(",")
             .map(|s| String::from(s))
             .collect();
+        let user_input = 0;
 
         let intcode_computer = IntcodeComputer::new(values.as_slice());
 
         let expected = vec![3500, 9, 10, 70, 2, 3, 11, 0, 99, 30, 40, 50];
 
-        let result = intcode_computer.run_program();
+        let (result, _) = intcode_computer.run_program(user_input);
 
         assert_eq!(result, expected);
     }

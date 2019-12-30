@@ -38,32 +38,40 @@ impl Opcode {
 
         match opcode_value {
             1 => {
-                let first_parameter = Parameter::new(first_parameter_mode, program_memory[current_index + 1]);
+                let first_parameter =
+                    Parameter::new(first_parameter_mode, program_memory[current_index + 1]);
 
-                let second_parameter = Parameter::new(second_parameter_mode, program_memory[current_index + 2]);
+                let second_parameter =
+                    Parameter::new(second_parameter_mode, program_memory[current_index + 2]);
 
-                let third_parameter = Parameter::new(third_parameter_mode, program_memory[current_index + 3]);
+                let third_parameter =
+                    Parameter::new(third_parameter_mode, program_memory[current_index + 3]);
 
                 Opcode::Add(first_parameter, second_parameter, third_parameter)
             }
             2 => {
-                let first_parameter = Parameter::new(first_parameter_mode, program_memory[current_index + 1]);
+                let first_parameter =
+                    Parameter::new(first_parameter_mode, program_memory[current_index + 1]);
 
-                let second_parameter = Parameter::new(second_parameter_mode, program_memory[current_index + 2]);
+                let second_parameter =
+                    Parameter::new(second_parameter_mode, program_memory[current_index + 2]);
 
-                let third_parameter = Parameter::new(third_parameter_mode, program_memory[current_index + 3]);
+                let third_parameter =
+                    Parameter::new(third_parameter_mode, program_memory[current_index + 3]);
 
                 Opcode::Multiply(first_parameter, second_parameter, third_parameter)
             }
             3 => {
                 let input_parameter = Parameter::new(1, user_input);
 
-                let first_parameter = Parameter::new(first_parameter_mode, program_memory[current_index + 1]);
+                let first_parameter =
+                    Parameter::new(first_parameter_mode, program_memory[current_index + 1]);
 
                 Opcode::SaveInput(input_parameter, first_parameter)
             }
             4 => {
-                let first_parameter = Parameter::new(first_parameter_mode, program_memory[current_index + 1]);
+                let first_parameter =
+                    Parameter::new(first_parameter_mode, program_memory[current_index + 1]);
 
                 Opcode::Output(first_parameter)
             }
@@ -74,16 +82,24 @@ impl Opcode {
 
     // Returns values of the Add, Multiply, SaveInput, and Output and the next index.
     // None if Terminate
-    pub fn execute(&self, program_memory: &mut [i32], current_index: usize) -> Option<(i32, usize)> {
+    pub fn execute(
+        &self,
+        program_memory: &mut [i32],
+        current_index: usize,
+    ) -> Option<(i32, usize)> {
         match self {
             Opcode::Add(first_parameter, second_parameter, third_parameter) => {
-                let first_value = Self::get_parameter_value_from_memory(first_parameter, program_memory);
+                let first_value =
+                    Self::get_parameter_value_from_memory(first_parameter, program_memory);
 
-                let second_value = Self::get_parameter_value_from_memory(second_parameter, program_memory);
+                let second_value =
+                    Self::get_parameter_value_from_memory(second_parameter, program_memory);
 
                 let save_index = match third_parameter {
                     Parameter::Position(index) => Self::transform_index(*index, program_memory),
-                    Parameter::Immediate(_) => panic!("Cannot save a value with an immediate parameter!"),
+                    Parameter::Immediate(_) => {
+                        panic!("Cannot save a value with an immediate parameter!")
+                    }
                 };
 
                 let sum = first_value + second_value;
@@ -91,15 +107,19 @@ impl Opcode {
                 program_memory[save_index] = sum;
 
                 Some((sum, current_index + 4))
-            },
+            }
             Opcode::Multiply(first_parameter, second_parameter, third_parameter) => {
-                let first_value = Self::get_parameter_value_from_memory(first_parameter, program_memory);
+                let first_value =
+                    Self::get_parameter_value_from_memory(first_parameter, program_memory);
 
-                let second_value = Self::get_parameter_value_from_memory(second_parameter, program_memory);
+                let second_value =
+                    Self::get_parameter_value_from_memory(second_parameter, program_memory);
 
                 let save_index = match third_parameter {
                     Parameter::Position(index) => Self::transform_index(*index, program_memory),
-                    Parameter::Immediate(_) => panic!("Cannot save a value with an immediate parameter!"),
+                    Parameter::Immediate(_) => {
+                        panic!("Cannot save a value with an immediate parameter!")
+                    }
                 };
 
                 let product = first_value * second_value;
@@ -107,31 +127,37 @@ impl Opcode {
                 program_memory[save_index] = product;
 
                 Some((product, current_index + 4))
-            },
+            }
             Opcode::SaveInput(input_parameter, first_parameter) => {
-                let input_value = Self::get_parameter_value_from_memory(input_parameter, program_memory);
+                let input_value =
+                    Self::get_parameter_value_from_memory(input_parameter, program_memory);
 
                 let save_index = match first_parameter {
                     Parameter::Position(index) => Self::transform_index(*index, program_memory),
-                    Parameter::Immediate(_) => panic!("Cannot save a value with an immediate parameter!"),
+                    Parameter::Immediate(_) => {
+                        panic!("Cannot save a value with an immediate parameter!")
+                    }
                 };
 
                 program_memory[save_index] = input_value;
 
                 Some((input_value, current_index + 2))
-            },
+            }
             Opcode::Output(first_parameter) => {
-                let output_value = Self::get_parameter_value_from_memory(first_parameter, program_memory);
+                let output_value =
+                    Self::get_parameter_value_from_memory(first_parameter, program_memory);
 
                 Some((output_value, current_index + 2))
-            },
+            }
             Opcode::Terminate => None,
         }
     }
 
     fn get_parameter_value_from_memory(parameter: &Parameter, program_memory: &[i32]) -> i32 {
         match parameter {
-            Parameter::Position(index) => program_memory[Self::transform_index(*index, program_memory)],
+            Parameter::Position(index) => {
+                program_memory[Self::transform_index(*index, program_memory)]
+            }
             Parameter::Immediate(value) => *value,
         }
     }
