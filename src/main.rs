@@ -1,4 +1,5 @@
 pub mod file_reader;
+pub mod intcode_computer;
 
 mod day_1;
 mod day_2;
@@ -24,7 +25,7 @@ fn run_day(day: usize) {
 fn main() {
     print_seperator();
 
-    run_day(5);
+    run_day(2);
 
     print_seperator();
 }

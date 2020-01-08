@@ -1,8 +1,5 @@
-pub mod intcode_computer;
-pub mod intcode_instruction;
-
 use crate::file_reader::to_string_vector;
-use intcode_computer::IntcodeComputer;
+use crate::intcode_computer::IntcodeComputer;
 
 pub fn run_day_2() {
     let file_input = to_string_vector("inputs/day_2.txt");

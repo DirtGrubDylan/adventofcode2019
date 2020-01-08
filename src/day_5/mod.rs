@@ -1,7 +1,7 @@
 use std::io::{self, Write};
 
 use crate::file_reader::to_string_vector;
-use crate::day_2::intcode_computer::IntcodeComputer;
+use crate::intcode_computer::IntcodeComputer;
 
 pub fn run_day_5() {
     let file_input = to_string_vector("inputs/day_5.txt");

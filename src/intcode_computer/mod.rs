@@ -1,4 +1,6 @@
-use super::intcode_instruction::Opcode;
+pub mod intcode_instruction;
+
+use intcode_instruction::Opcode;
 
 #[derive(Debug, PartialEq)]
 pub struct IntcodeComputer {
