@@ -31,7 +31,12 @@ fn get_user_input() -> i32 {
 
     io::stdout().flush().expect("Could not flush stdout!");
 
-    io::stdin().read_line(&mut input_buffer).expect("Failed to read user input!");
+    io::stdin()
+        .read_line(&mut input_buffer)
+        .expect("Failed to read user input!");
 
-    input_buffer.trim().parse::<i32>().expect("Failed to parse user_input!")
+    input_buffer
+        .trim()
+        .parse::<i32>()
+        .expect("Failed to parse user_input!")
 }

@@ -399,7 +399,8 @@ mod tests {
         let expected = Opcode::StoreIfLessThan(
             Parameter::Position(9),
             Parameter::Position(10),
-            Parameter::Position(9));
+            Parameter::Position(9),
+        );
 
         let result = Opcode::new(user_input, &program_memory, current_index);
 
@@ -415,7 +416,8 @@ mod tests {
         let expected = Opcode::StoreIfEquals(
             Parameter::Immediate(-1),
             Parameter::Immediate(8),
-            Parameter::Position(3));
+            Parameter::Position(3),
+        );
 
         let result = Opcode::new(user_input, &program_memory, current_index);
 

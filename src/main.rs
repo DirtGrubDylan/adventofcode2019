@@ -6,6 +6,7 @@ mod day_2;
 mod day_3;
 mod day_4;
 mod day_5;
+mod day_6;
 
 fn print_seperator() {
     println!("-------------------------------");
@@ -18,6 +19,7 @@ fn run_day(day: usize) {
         3 => day_3::run_day_3(),
         4 => day_4::run_day_4(),
         5 => day_5::run_day_5(),
+        6 => day_6::run_day_6(),
         _ => (),
     }
 }
@@ -25,7 +27,7 @@ fn run_day(day: usize) {
 fn main() {
     print_seperator();
 
-    run_day(2);
+    run_day(6);
 
     print_seperator();
 }
