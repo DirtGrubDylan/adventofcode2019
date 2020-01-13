@@ -68,6 +68,30 @@ impl OrbitMap {
         })
     }
 
+    pub fn number_of_objects_between(
+        &self,
+        first_object_name: &str,
+        second_object_name: &str,
+    ) -> Option<u32> {
+        let mut orbit_names_distance_path_for_first_object =
+            self.orbit_names_distance_path_for(first_object_name);
+        let orbit_names_distance_path_for_second_object =
+            self.orbit_names_distance_path_for(second_object_name);
+
+        orbit_names_distance_path_for_first_object
+            .retain(|k, _| orbit_names_distance_path_for_second_object.contains_key(k));
+
+        orbit_names_distance_path_for_first_object
+            .iter()
+            .map(|(object_name, distance)| {
+                distance
+                    + orbit_names_distance_path_for_second_object
+                        .get(object_name)
+                        .unwrap()
+            })
+            .min()
+    }
+
     fn add_orbit_description_line(&mut self, orbit_description_line: &str) {
         let object_names: Vec<String> = orbit_description_line
             .split(')')
@@ -131,6 +155,31 @@ impl OrbitMap {
     fn number_of_orbits_for(&self, object_name: &str) -> u32 {
         self.number_of_direct_orbits_for(object_name)
             + self.number_of_indirect_orbits_for(object_name)
+    }
+
+    fn orbit_names_distance_path_for(&self, object_name: &str) -> HashMap<String, u32> {
+        let mut distance_to = 0;
+        let mut optional_next_object_name: Option<String> = None;
+        let mut result = HashMap::new();
+
+        // Get directly orbiting object
+        if let Some(object) = self.object_orbiting_map.get(object_name) {
+            optional_next_object_name = object.object_name_this_is_orbiting.clone();
+        }
+
+        while let Some(next_object_name) = optional_next_object_name.clone() {
+            result.insert(String::from(next_object_name.clone()), distance_to);
+
+            if let Some(object) = self.object_orbiting_map.get(&next_object_name) {
+                optional_next_object_name = object.object_name_this_is_orbiting.clone();
+            }
+
+            if optional_next_object_name.is_some() {
+                distance_to += 1;
+            }
+        }
+
+        result
     }
 }
 
@@ -334,6 +383,39 @@ mod tests {
 
             assert_eq!(result, expected);
         })
+    }
+
+    #[test]
+    fn test_orbit_names_distance_path_for() {
+        run_test(|orbit_map: OrbitMap| {
+            let expected: HashMap<String, u32> = [
+                (String::from("K"), 0),
+                (String::from("J"), 1),
+                (String::from("E"), 2),
+                (String::from("D"), 3),
+                (String::from("C"), 4),
+                (String::from("B"), 5),
+                (String::from("COM"), 6),
+            ]
+            .iter()
+            .cloned()
+            .collect();
+
+            let result = orbit_map.orbit_names_distance_path_for("L");
+
+            assert_eq!(result, expected);
+        });
+    }
+
+    #[test]
+    fn test_number_of_objects_between() {
+        run_test(|orbit_map: OrbitMap| {
+            let expected = Some(6);
+
+            let result = orbit_map.number_of_objects_between("L", "H");
+
+            assert_eq!(result, expected);
+        });
     }
 
     fn run_test<T>(test: T)
