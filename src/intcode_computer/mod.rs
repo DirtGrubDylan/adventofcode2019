@@ -2,7 +2,7 @@ pub mod intcode_instruction;
 
 use intcode_instruction::Opcode;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct IntcodeComputer {
     current_program: Vec<i32>,
     current_index: usize,
@@ -39,7 +39,9 @@ impl IntcodeComputer {
     pub fn run_program_until_first_input_opcode(&mut self) -> Option<i32> {
         let fake_input = 0;
 
-        if let Opcode::SaveInput(_, _) = Opcode::new(fake_input, &self.current_program, self.current_index) {
+        if let Opcode::SaveInput(_, _) =
+            Opcode::new(fake_input, &self.current_program, self.current_index)
+        {
             None
         } else {
             self.continue_program_until_next_input_opcode(fake_input)
@@ -219,7 +221,9 @@ mod tests {
 
     #[test]
     fn test_run_program_until_first_input_opcode() {
-        let program = vec![3, 15, 3, 16, 1002, 16, 10, 16, 1, 16, 15, 15, 4, 15, 99, 0, 0];
+        let program = vec![
+            3, 15, 3, 16, 1002, 16, 10, 16, 1, 16, 15, 15, 4, 15, 99, 0, 0,
+        ];
         let mut intcode_computer = IntcodeComputer::new(program.as_slice());
 
         let expected_computer = IntcodeComputer::new(program.as_slice());
@@ -232,15 +236,35 @@ mod tests {
 
     #[test]
     fn test_continue_program_until_next_first_input_opcode_single_run() {
-        let program = vec![3, 15, 3, 16, 1002, 16, 10, 16, 1, 16, 15, 15, 4, 15, 99, 0, 0];
+        let program = vec![
+            3, 15, 3, 16, 1002, 16, 10, 16, 1, 16, 15, 15, 4, 15, 99, 0, 0,
+        ];
         let mut intcode_computer = IntcodeComputer::new(program.as_slice());
         let first_input = 666;
 
-        let expected_current_program = vec![3, 15, 3, 16, 1002, 16, 10, 16, 1, 16, 15, 15, 4, 15, 99, first_input, 0];
+        let expected_current_program = vec![
+            3,
+            15,
+            3,
+            16,
+            1002,
+            16,
+            10,
+            16,
+            1,
+            16,
+            15,
+            15,
+            4,
+            15,
+            99,
+            first_input,
+            0,
+        ];
         let expected_computer = IntcodeComputer {
             current_program: expected_current_program.clone(),
             current_index: 2,
-            original_program: program.clone()
+            original_program: program.clone(),
         };
 
         intcode_computer.run_program_until_first_input_opcode();
@@ -258,11 +282,12 @@ mod tests {
         let first_input = 656;
         let second_input = 10;
 
-        let expected_current_program = vec![3, 11, 3, 12, 1, 12, 11, 11, 4, 11, 99, 666, second_input];
+        let expected_current_program =
+            vec![3, 11, 3, 12, 1, 12, 11, 11, 4, 11, 99, 666, second_input];
         let expected_computer = IntcodeComputer {
             current_program: expected_current_program.clone(),
             current_index: 10,
-            original_program: program.clone()
+            original_program: program.clone(),
         };
         let expected_result = Some(666);
 
@@ -273,7 +298,6 @@ mod tests {
         assert_eq!(intcode_computer, expected_computer);
         assert_eq!(result, expected_result);
     }
-
 
     #[test]
     fn test_reset() {
