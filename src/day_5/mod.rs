@@ -13,9 +13,9 @@ pub fn run_day_5() {
                     program.split(",").map(|s| String::from(s)).collect();
 
                 let user_input = get_user_input();
-                let intcode_computer = IntcodeComputer::from(program_values.as_slice());
+                let mut intcode_computer = IntcodeComputer::from(program_values.as_slice());
 
-                let (_, output_values) = intcode_computer.run_program(user_input);
+                let output_values = intcode_computer.run_program(user_input);
 
                 println!("System output values are: {:?}", output_values);
             }
