@@ -122,7 +122,10 @@ impl Opcode {
                 Opcode::StoreIfEquals(first_parameter, second_parameter, third_parameter)
             }
             99 => Opcode::Terminate,
-            _ => panic!("Unexpected opcode given!"),
+            _ => panic!(
+                "Unexpected opcode given (instruction, index): {:?}",
+                (instruction_definitions, current_index)
+            ),
         }
     }
 

@@ -1,3 +1,5 @@
+use std::collections::VecDeque;
+
 use crate::intcode_computer::IntcodeComputer;
 
 #[derive(Debug, PartialEq)]
@@ -40,7 +42,7 @@ impl Amplifier {
 }
 
 #[derive(Debug)]
-struct AmplifierCircuit {
+pub struct AmplifierCircuit {
     amplifiers: Vec<Amplifier>,
 }
 
@@ -69,14 +71,65 @@ impl AmplifierCircuit {
     }
 
     pub fn get_largest_output_signal(&mut self) -> Result<(Vec<i32>, i32), String> {
-        unimplemented!()
+        let mut best_phase_settings = Vec::new();
+        let mut best_output_signal = 0;
+
+        let variations = Self::get_all_phase_signal_variations(self.amplifiers.len());
+
+        for phase_settings in variations {
+            let mut input_signal = 0;
+
+            for amplifier_index in 0..phase_settings.len() {
+                let phase_setting = phase_settings[amplifier_index];
+
+                let mut amplifier = self.amplifiers.get_mut(amplifier_index).unwrap();
+
+                amplifier.phase_setting = phase_setting;
+                amplifier.input_signal = input_signal;
+
+                input_signal = amplifier.run_program().unwrap();
+
+                amplifier.reset_computer();
+            }
+
+            if best_output_signal < input_signal {
+                best_phase_settings = phase_settings.clone();
+                best_output_signal = input_signal;
+            }
+        }
+
+        Ok((best_phase_settings, best_output_signal))
     }
 
     fn get_all_phase_signal_variations(number_of_amplifiers: usize) -> Vec<Vec<i32>> {
-        unimplemented!()
+        let mut variations = Vec::new();
+        let mut used = Vec::new();
+        let mut unused = (0..number_of_amplifiers)
+            .map(|x| x as i32)
+            .collect::<VecDeque<i32>>();
+
+        permutate(&mut used, &mut unused, &mut variations);
+
+        variations
     }
 }
 
+fn permutate<T>(used: &mut Vec<T>, unused: &mut VecDeque<T>, permutations: &mut Vec<Vec<T>>)
+where
+    T: Clone,
+{
+    let number_of_unused = unused.len();
+
+    if number_of_unused == 0 {
+        permutations.push(used.to_vec());
+    } else {
+        for _ in 0..number_of_unused {
+            used.push(unused.pop_front().unwrap());
+            permutate(used, unused, permutations);
+            unused.push_back(used.pop().unwrap());
+        }
+    }
+}
 #[cfg(test)]
 mod tests {
     use std::panic;
@@ -168,8 +221,8 @@ mod tests {
         let expected = vec![
             vec![0, 1, 2],
             vec![0, 2, 1],
-            vec![1, 0, 2],
             vec![1, 2, 0],
+            vec![1, 0, 2],
             vec![2, 0, 1],
             vec![2, 1, 0],
         ];
