@@ -280,7 +280,8 @@ mod tests {
 
         intcode_computer.run_program_until_first_input_opcode();
 
-        let (result, output) = intcode_computer.continue_program_until_next_input_opcode(first_input);
+        let (result, output) =
+            intcode_computer.continue_program_until_next_input_opcode(first_input);
 
         assert_eq!(intcode_computer, expected_computer);
         assert_eq!(result, IntcodeComputerResult::WAITING);

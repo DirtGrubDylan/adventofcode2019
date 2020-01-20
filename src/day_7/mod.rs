@@ -19,6 +19,7 @@ pub fn run_day_7() {
                     AmplifierCircuit::new(&amplifier_names, &program_values);
 
                 run_part_1(&mut amplifier_circuit);
+                run_part_2(&mut amplifier_circuit);
             }
         }
         Err(error) => println!("Error parsing file: {:?}", error),
@@ -26,7 +27,21 @@ pub fn run_day_7() {
 }
 
 fn run_part_1(amplifier_circuit: &mut AmplifierCircuit) {
-    let result = amplifier_circuit.get_largest_output_signal().unwrap();
+    let phase_settings = [0, 1, 2, 3, 4];
+
+    let result = amplifier_circuit
+        .get_largest_output_signal(&phase_settings)
+        .unwrap();
 
     println!("Day 7 Part 1: {:?}", result);
+}
+
+fn run_part_2(amplifier_circuit: &mut AmplifierCircuit) {
+    let phase_settings = [5, 6, 7, 8, 9];
+
+    let result = amplifier_circuit
+        .get_largest_output_signal(&phase_settings)
+        .unwrap();
+
+    println!("Day 7 Part 2: {:?}", result);
 }

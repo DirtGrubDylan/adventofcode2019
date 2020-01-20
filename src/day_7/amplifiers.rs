@@ -31,13 +31,17 @@ impl Amplifier {
         self.intcode_computer
             .continue_program_until_next_input_opcode(self.phase_setting);
 
+        self.continue_program()
+    }
+
+    pub fn continue_program(&mut self) -> Result<(IntcodeComputerResult, i32), String> {
         let (result, output) = self
             .intcode_computer
             .continue_program_until_next_input_opcode(self.input_signal);
 
         match output {
             Some(value) => Ok((result, value)),
-            None => Err(format!("Something went wrong for amplifier: {}", self.name))
+            None => Err(format!("Something went wrong for amplifier: {}", self.name)),
         }
     }
 
@@ -75,45 +79,66 @@ impl AmplifierCircuit {
         }
     }
 
-    pub fn get_largest_output_signal(&mut self) -> Result<(Vec<i32>, i32), String> {
+    pub fn get_largest_output_signal(
+        &mut self,
+        phase_settings: &[i32],
+    ) -> Result<(Vec<i32>, i32), String> {
+        let number_of_amplifiers = self.amplifiers.len();
+
         let mut best_phase_settings = Vec::new();
         let mut best_output_signal = i32::min_value();
 
-        let variations = Self::get_all_phase_signal_variations(self.amplifiers.len());
+        let variations = Self::get_all_phase_signal_variations(phase_settings);
 
         for phase_settings in variations {
-            let mut input_signal = 0;
+            let mut is_first_run = true;
+            let mut next_input_signal = 0;
+            let mut amplifier_index = 0;
 
-            for amplifier_index in 0..phase_settings.len() {
+            loop {
                 let phase_setting = phase_settings[amplifier_index];
 
                 let mut amplifier = self.amplifiers.get_mut(amplifier_index).unwrap();
 
                 amplifier.phase_setting = phase_setting;
-                amplifier.input_signal = input_signal;
+                amplifier.input_signal = next_input_signal;
 
-                let (_, output) = amplifier.run_program().unwrap();
+                let (result, output) = match is_first_run {
+                    true => amplifier.run_program().unwrap(),
+                    false => amplifier.continue_program().unwrap(),
+                };
 
-                input_signal = output;
+                if best_output_signal < output {
+                    best_phase_settings = phase_settings.clone();
+                    best_output_signal = output;
+                }
 
-                amplifier.reset_computer();
+                if (result == IntcodeComputerResult::FINISHED)
+                    && (amplifier_index == (number_of_amplifiers - 1))
+                {
+                    break;
+                }
+
+                if amplifier_index == (number_of_amplifiers - 1) {
+                    is_first_run = false;
+                }
+
+                next_input_signal = output;
+                amplifier_index = (amplifier_index + 1) % self.amplifiers.len();
             }
 
-            if best_output_signal < input_signal {
-                best_phase_settings = phase_settings.clone();
-                best_output_signal = input_signal;
+            for amplifier in self.amplifiers.iter_mut() {
+                amplifier.reset_computer();
             }
         }
 
         Ok((best_phase_settings, best_output_signal))
     }
 
-    fn get_all_phase_signal_variations(number_of_amplifiers: usize) -> Vec<Vec<i32>> {
+    fn get_all_phase_signal_variations(phase_settings: &[i32]) -> Vec<Vec<i32>> {
         let mut variations = Vec::new();
         let mut used = Vec::new();
-        let mut unused = (0..number_of_amplifiers)
-            .map(|x| x as i32)
-            .collect::<VecDeque<i32>>();
+        let mut unused = phase_settings.iter().map(|x| *x).collect::<VecDeque<i32>>();
 
         permutate(&mut used, &mut unused, &mut variations);
 
@@ -147,6 +172,7 @@ mod tests {
 
     const NAMES: [&'static str; 5] = ["A", "B", "C", "D", "E"];
     const PHASE_SETTINGS: [i32; 5] = [4, 3, 2, 1, 0];
+    const OTHER_PHASE_SETTINGS: [i32; 5] = [9, 8, 7, 6, 5];
     const STARTING_INPUT_SIGNAL: i32 = 0;
     const PROGRAM: [i32; 17] = [
         3, 15, 3, 16, 1002, 16, 10, 16, 1, 16, 15, 15, 4, 15, 99, -1, -1,
@@ -221,10 +247,21 @@ mod tests {
         run_amplifier_circuit_test(|mut amplifier_circuit| {
             let expected = Ok((PHASE_SETTINGS.to_vec(), 43210));
 
-            let result = amplifier_circuit.get_largest_output_signal();
+            let result = amplifier_circuit.get_largest_output_signal(&PHASE_SETTINGS);
 
             assert_eq!(result, expected);
         });
+    }
+
+    #[test]
+    fn test_amplifier_circuit_get_larget_output_signal_feedback_loop() {
+        let mut amplifier_circuit = AmplifierCircuit::new(&NAMES, &OTHER_PROGRAM);
+
+        let expected = Ok((OTHER_PHASE_SETTINGS.to_vec(), 139629729));
+
+        let result = amplifier_circuit.get_largest_output_signal(&OTHER_PHASE_SETTINGS);
+
+        assert_eq!(result, expected);
     }
 
     #[test]
@@ -238,7 +275,7 @@ mod tests {
             vec![2, 1, 0],
         ];
 
-        let result = AmplifierCircuit::get_all_phase_signal_variations(3);
+        let result = AmplifierCircuit::get_all_phase_signal_variations(&[0, 1, 2]);
 
         assert_eq!(result, expected);
     }
