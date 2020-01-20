@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
 
-use crate::intcode_computer::IntcodeComputer;
+use crate::intcode_computer::{IntcodeComputer, IntcodeComputerResult};
 
 #[derive(Debug, PartialEq)]
 pub struct Amplifier {
@@ -25,15 +25,20 @@ impl Amplifier {
         }
     }
 
-    pub fn run_program(&mut self) -> Result<i32, String> {
+    pub fn run_program(&mut self) -> Result<(IntcodeComputerResult, i32), String> {
         self.intcode_computer.run_program_until_first_input_opcode();
 
         self.intcode_computer
             .continue_program_until_next_input_opcode(self.phase_setting);
 
-        self.intcode_computer
-            .continue_program_until_next_input_opcode(self.input_signal)
-            .ok_or(format!("Something went wrong for amplifier: {}", self.name))
+        let (result, output) = self
+            .intcode_computer
+            .continue_program_until_next_input_opcode(self.input_signal);
+
+        match output {
+            Some(value) => Ok((result, value)),
+            None => Err(format!("Something went wrong for amplifier: {}", self.name))
+        }
     }
 
     pub fn reset_computer(&mut self) {
@@ -72,7 +77,7 @@ impl AmplifierCircuit {
 
     pub fn get_largest_output_signal(&mut self) -> Result<(Vec<i32>, i32), String> {
         let mut best_phase_settings = Vec::new();
-        let mut best_output_signal = 0;
+        let mut best_output_signal = i32::min_value();
 
         let variations = Self::get_all_phase_signal_variations(self.amplifiers.len());
 
@@ -87,7 +92,9 @@ impl AmplifierCircuit {
                 amplifier.phase_setting = phase_setting;
                 amplifier.input_signal = input_signal;
 
-                input_signal = amplifier.run_program().unwrap();
+                let (_, output) = amplifier.run_program().unwrap();
+
+                input_signal = output;
 
                 amplifier.reset_computer();
             }
@@ -144,6 +151,10 @@ mod tests {
     const PROGRAM: [i32; 17] = [
         3, 15, 3, 16, 1002, 16, 10, 16, 1, 16, 15, 15, 4, 15, 99, -1, -1,
     ];
+    const OTHER_PROGRAM: [i32; 29] = [
+        3, 26, 1001, 26, -4, 26, 3, 27, 1002, 27, 2, 27, 1, 27, 26, 27, 4, 27, 1001, 28, -1, 28,
+        1005, 28, 6, 99, 0, 0, 5,
+    ];
 
     #[test]
     fn test_new_amplifier() {
@@ -162,7 +173,7 @@ mod tests {
     #[test]
     fn test_amplifier_run_progrom() {
         run_amplifier_test(|mut amplifier| {
-            let expected = Ok(4);
+            let expected = Ok((IntcodeComputerResult::FINISHED, 4));
 
             let result = amplifier.run_program();
 

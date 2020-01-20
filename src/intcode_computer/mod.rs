@@ -2,6 +2,12 @@ pub mod intcode_instruction;
 
 use intcode_instruction::Opcode;
 
+#[derive(Debug, PartialEq)]
+pub enum IntcodeComputerResult {
+    WAITING,
+    FINISHED,
+}
+
 #[derive(Debug, PartialEq, Clone)]
 pub struct IntcodeComputer {
     current_program: Vec<i32>,
@@ -36,20 +42,24 @@ impl IntcodeComputer {
         output_values
     }
 
-    pub fn run_program_until_first_input_opcode(&mut self) -> Option<i32> {
+    pub fn run_program_until_first_input_opcode(&mut self) -> (IntcodeComputerResult, Option<i32>) {
         let fake_input = 0;
 
         if let Opcode::SaveInput(_, _) =
             Opcode::new(fake_input, &self.current_program, self.current_index)
         {
-            None
+            (IntcodeComputerResult::WAITING, None)
         } else {
             self.continue_program_until_next_input_opcode(fake_input)
         }
     }
 
-    pub fn continue_program_until_next_input_opcode(&mut self, input: i32) -> Option<i32> {
-        let mut result = None;
+    pub fn continue_program_until_next_input_opcode(
+        &mut self,
+        input: i32,
+    ) -> (IntcodeComputerResult, Option<i32>) {
+        let mut output = None;
+        let mut result = IntcodeComputerResult::FINISHED;
 
         let mut opcode = Opcode::new(input, &self.current_program, self.current_index);
 
@@ -60,14 +70,14 @@ impl IntcodeComputer {
             opcode = Opcode::new(input, &self.current_program, self.current_index);
 
             if let Opcode::SaveInput(_, _) = opcode {
-                result = None;
+                result = IntcodeComputerResult::WAITING;
                 break;
             } else if let Opcode::Output(_) = opcode {
-                result = Some(opcode_execution_result);
+                output = Some(opcode_execution_result);
             }
         }
 
-        result
+        (result, output)
     }
 
     pub fn replace_code_in_program(&mut self, code_index: usize, new_value: i32) {
@@ -228,10 +238,11 @@ mod tests {
 
         let expected_computer = IntcodeComputer::new(program.as_slice());
 
-        let result = intcode_computer.run_program_until_first_input_opcode();
+        let (result, output) = intcode_computer.run_program_until_first_input_opcode();
 
         assert_eq!(intcode_computer, expected_computer);
-        assert!(result.is_none());
+        assert_eq!(result, IntcodeComputerResult::WAITING);
+        assert!(output.is_none());
     }
 
     #[test]
@@ -269,10 +280,11 @@ mod tests {
 
         intcode_computer.run_program_until_first_input_opcode();
 
-        let result = intcode_computer.continue_program_until_next_input_opcode(first_input);
+        let (result, output) = intcode_computer.continue_program_until_next_input_opcode(first_input);
 
         assert_eq!(intcode_computer, expected_computer);
-        assert!(result.is_none());
+        assert_eq!(result, IntcodeComputerResult::WAITING);
+        assert!(output.is_none());
     }
 
     #[test]
@@ -289,7 +301,7 @@ mod tests {
             current_index: 10,
             original_program: program.clone(),
         };
-        let expected_result = Some(666);
+        let expected_result = (IntcodeComputerResult::FINISHED, Some(666));
 
         intcode_computer.run_program_until_first_input_opcode();
         intcode_computer.continue_program_until_next_input_opcode(first_input);
