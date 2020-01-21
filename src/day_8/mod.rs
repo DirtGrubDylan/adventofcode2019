@@ -20,6 +20,7 @@ pub fn run_day_8() {
                 let image = Image::new(width, height, &image_data);
 
                 run_part_1(&image);
+                run_part_2(&image);
             }
         }
         Err(error) => println!("Error parsing file: {:?}", error),
@@ -36,4 +37,10 @@ fn run_part_1(image: &Image) {
         "Day 8 Part 1 Solution: {}",
         number_of_twos_in_layer * number_of_ones_in_layer
     );
+}
+
+fn run_part_2(image: &Image) {
+    println!("Day 8 Part 2 Solution: ");
+
+    image.render();
 }

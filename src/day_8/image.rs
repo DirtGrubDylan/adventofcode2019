@@ -27,6 +27,20 @@ impl Image {
             .iter()
             .min_by_key(|pixel| pixel.amount_of_pixels_with_value(target_pixel_value))
     }
+
+    pub fn render(&self) {
+        self.get_flattened_layer().render();
+    }
+
+    fn get_flattened_layer(&self) -> Layer {
+        let mut flattened_layer = self.layers.first().unwrap().clone();
+
+        for other_layer in self.layers.iter().skip(1) {
+            flattened_layer.adjust_with(other_layer);
+        }
+
+        flattened_layer
+    }
 }
 
 #[cfg(test)]
@@ -38,6 +52,9 @@ mod tests {
     const IMAGE_WIDTH: usize = 3;
     const IMAGE_HEIGHT: usize = 2;
     const IMAGE_DATA: [u32; 12] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2];
+    const OTHER_IMAGE_WIDTH: usize = 2;
+    const OTHER_IMAGE_HEIGHT: usize = 2;
+    const OTHER_IMAGE_DATA: [u32; 16] = [0, 2, 2, 2, 1, 1, 2, 2, 2, 2, 1, 2, 0, 0, 0, 0];
 
     #[test]
     fn test_new() {
@@ -64,6 +81,17 @@ mod tests {
 
             assert_eq!(result, expected);
         });
+    }
+
+    #[test]
+    fn test_get_flattened_layer() {
+        let image = Image::new(OTHER_IMAGE_WIDTH, OTHER_IMAGE_HEIGHT, &OTHER_IMAGE_DATA);
+
+        let expected = Layer::new(OTHER_IMAGE_WIDTH, &[0, 1, 1, 0]);
+
+        let result = image.get_flattened_layer();
+
+        assert_eq!(result, expected);
     }
 
     fn run_tests<T>(test: T)
