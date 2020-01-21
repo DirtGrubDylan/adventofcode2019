@@ -4,12 +4,21 @@ pub struct Layer {
 }
 
 impl Layer {
-    pub fn new(width: usize, height: usize, layer_image_data: &[u32]) -> Layer {
-        unimplemented!()
+    pub fn new(width: usize, layer_image_data: &[u32]) -> Layer {
+        Layer {
+            pixels: layer_image_data
+                .chunks(width)
+                .map(|row| row.to_vec())
+                .collect(),
+        }
     }
 
-    pub fn amount_of_pixels_with_value(&self, pixel_value: u32) -> u32 {
-        unimplemented!()
+    pub fn amount_of_pixels_with_value(&self, target_pixel_value: u32) -> u32 {
+        self.pixels.iter().fold(0, |acc, row| {
+            acc + row.iter().fold(0, |acc, &pixel_value| {
+                acc + ((pixel_value == target_pixel_value) as u32)
+            })
+        })
     }
 }
 
@@ -20,7 +29,6 @@ mod tests {
     use super::*;
 
     const IMAGE_WIDTH: usize = 3;
-    const IMAGE_HEIGHT: usize = 2;
     const IMAGE_DATA: [u32; 12] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2];
 
     #[test]
@@ -49,7 +57,7 @@ mod tests {
     where
         T: FnOnce(Layer) -> () + panic::UnwindSafe,
     {
-        let layer = Layer::new(IMAGE_WIDTH, IMAGE_HEIGHT, &IMAGE_DATA[6..12]);
+        let layer = Layer::new(IMAGE_WIDTH, &IMAGE_DATA[6..12]);
 
         let result = panic::catch_unwind(|| test(layer));
 

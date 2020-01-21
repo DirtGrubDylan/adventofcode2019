@@ -9,11 +9,23 @@ pub struct Image {
 
 impl Image {
     pub fn new(width: usize, height: usize, image_data: &[u32]) -> Image {
-        unimplemented!()
+        Image {
+            width: width,
+            height: height,
+            layers: image_data
+                .chunks(width * height)
+                .map(|layer_data| Layer::new(width, layer_data))
+                .collect(),
+        }
     }
 
-    pub fn layer_with_least_amount_of_pixel_value(&self, pixel_value: u32) -> &Layer {
-        unimplemented!()
+    pub fn layer_with_least_amount_of_pixel_value(
+        &self,
+        target_pixel_value: u32,
+    ) -> Option<&Layer> {
+        self.layers
+            .iter()
+            .min_by_key(|pixel| pixel.amount_of_pixels_with_value(target_pixel_value))
     }
 }
 
@@ -34,8 +46,8 @@ mod tests {
                 width: IMAGE_WIDTH,
                 height: IMAGE_HEIGHT,
                 layers: vec![
-                    Layer::new(IMAGE_WIDTH, IMAGE_HEIGHT, &IMAGE_DATA[0..6]),
-                    Layer::new(IMAGE_WIDTH, IMAGE_HEIGHT, &IMAGE_DATA[0..6]),
+                    Layer::new(IMAGE_WIDTH, &IMAGE_DATA[0..6]),
+                    Layer::new(IMAGE_WIDTH, &IMAGE_DATA[6..12]),
                 ],
             };
 
@@ -46,7 +58,7 @@ mod tests {
     #[test]
     fn test_layer_with_least_amount_of_pixel_value() {
         run_tests(|image| {
-            let expected = image.layers.get(0).unwrap();
+            let expected = image.layers.get(0);
 
             let result = image.layer_with_least_amount_of_pixel_value(0);
 
