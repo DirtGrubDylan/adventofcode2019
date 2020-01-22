@@ -23,7 +23,7 @@ fn find_first_solution(program: &str) {
     intcode_computer.replace_code_in_program(1, 12);
     intcode_computer.replace_code_in_program(2, 2);
 
-    intcode_computer.run_program(0);
+    intcode_computer.execute_program();
 
     let first_value = intcode_computer.get_current_memory()[0];
 
@@ -49,7 +49,7 @@ fn find_second_solution(program: &str, target: i32, largest_noun: i32, largest_v
             intcode_computer.replace_code_in_program(1, noun);
             intcode_computer.replace_code_in_program(2, verb);
 
-            intcode_computer.run_program(0);
+            intcode_computer.execute_program();
 
             let output = intcode_computer.get_current_memory()[0];
 
@@ -62,6 +62,8 @@ fn find_second_solution(program: &str, target: i32, largest_noun: i32, largest_v
                 verb_lower_bound = verb;
                 verb = int_between(verb_lower_bound, verb_upper_bound);
             }
+
+            intcode_computer.reset();
         }
 
         noun += 1;

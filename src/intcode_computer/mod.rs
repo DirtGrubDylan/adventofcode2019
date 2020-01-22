@@ -13,6 +13,7 @@ pub struct IntcodeComputer {
     current_program: Vec<i32>,
     current_index: usize,
     original_program: Vec<i32>,
+    current_input: Option<i32>,
 }
 
 impl IntcodeComputer {
@@ -23,61 +24,50 @@ impl IntcodeComputer {
         args.into()
     }
 
-    pub fn run_program(&mut self, user_input: i32) -> Vec<i32> {
-        let mut output_values = Vec::new();
-
-        let mut opcode = Opcode::new(user_input, &self.current_program, self.current_index);
-
-        while let Some((opcode_execution_result, next_index)) =
-            opcode.execute(&mut self.current_program, self.current_index)
-        {
-            if let Opcode::Output(_) = opcode {
-                output_values.push(opcode_execution_result);
-            }
-
-            self.current_index = next_index;
-            opcode = Opcode::new(user_input, &self.current_program, self.current_index);
-        }
-
-        output_values
-    }
-
-    pub fn run_program_until_first_input_opcode(&mut self) -> (IntcodeComputerResult, Option<i32>) {
-        let fake_input = 0;
-
-        if let Opcode::SaveInput(_, _) =
-            Opcode::new(fake_input, &self.current_program, self.current_index)
-        {
-            (IntcodeComputerResult::WAITING, None)
-        } else {
-            self.continue_program_until_next_input_opcode(fake_input)
-        }
-    }
-
-    pub fn continue_program_until_next_input_opcode(
-        &mut self,
-        input: i32,
-    ) -> (IntcodeComputerResult, Option<i32>) {
+    pub fn execute_program(&mut self) -> (IntcodeComputerResult, Option<i32>) {
         let mut output = None;
-        let mut result = IntcodeComputerResult::FINISHED;
+        let mut result = IntcodeComputerResult::WAITING;
 
-        let mut opcode = Opcode::new(input, &self.current_program, self.current_index);
+        let mut opcode =
+            Opcode::new(self.current_input.unwrap_or(0), &self.current_program, self.current_index);
+
+        if let Opcode::SaveInput(_, _) = opcode {
+            if self.current_input.is_none() {
+                return (result, output);
+            }
+        }
 
         while let Some((opcode_execution_result, next_index)) =
             opcode.execute(&mut self.current_program, self.current_index)
         {
+            let next_opcode = Opcode::new(
+                self.current_input.unwrap_or(0), &self.current_program, next_index);
             self.current_index = next_index;
-            opcode = Opcode::new(input, &self.current_program, self.current_index);
 
-            if let Opcode::SaveInput(_, _) = opcode {
-                result = IntcodeComputerResult::WAITING;
-                break;
-            } else if let Opcode::Output(_) = opcode {
+            if let Opcode::Output(_) = opcode {
                 output = Some(opcode_execution_result);
+            } else if let Opcode::SaveInput(_, _) = opcode {
+                self.current_input = None;
             }
+
+            if let Opcode::SaveInput(_, _) = next_opcode {
+                if self.current_input.is_none() {
+                    result = IntcodeComputerResult::WAITING;
+
+                    return (result, output);
+                }
+            }
+
+            opcode = next_opcode;
         }
+
+        result = IntcodeComputerResult::FINISHED;
 
         (result, output)
+    }
+
+    pub fn set_input(&mut self, input: i32) {
+        self.current_input = Some(input);
     }
 
     pub fn replace_code_in_program(&mut self, code_index: usize, new_value: i32) {
@@ -93,6 +83,7 @@ impl IntcodeComputer {
     pub fn reset(&mut self) {
         self.current_index = 0;
         self.current_program = self.original_program.clone();
+        self.current_input = None;
     }
 
     pub fn get_current_memory(&self) -> Vec<i32> {
@@ -106,6 +97,7 @@ impl From<&[i32]> for IntcodeComputer {
             current_program: a.clone().to_vec(),
             current_index: 0,
             original_program: a.to_vec(),
+            current_input: None,
         }
     }
 }
@@ -131,6 +123,7 @@ mod tests {
             current_program: values.clone(),
             current_index: 0,
             original_program: values.clone(),
+            current_input: None,
         };
 
         let result = IntcodeComputer::new(values.as_slice());
@@ -179,12 +172,13 @@ mod tests {
     }
 
     #[test]
-    fn test_run_program_opcode_1() {
+    fn test_execute_program_opcode_1() {
         let mut intcode_computer =
             IntcodeComputer::new(vec![1, 1, 1, 4, 99, 5, 6, 0, 99].as_slice());
         let user_input = 0;
 
-        intcode_computer.run_program(user_input);
+        intcode_computer.set_input(user_input);
+        intcode_computer.execute_program();
 
         let expected = vec![30, 1, 1, 4, 2, 5, 6, 0, 99];
 
@@ -198,7 +192,8 @@ mod tests {
         let mut intcode_computer = IntcodeComputer::new(vec![2, 4, 4, 5, 99, 0].as_slice());
         let user_input = 0;
 
-        intcode_computer.run_program(user_input);
+        intcode_computer.set_input(user_input);
+        intcode_computer.execute_program();
 
         let expected = vec![2, 4, 4, 5, 99, 9801];
 
@@ -220,7 +215,8 @@ mod tests {
 
         let mut intcode_computer = IntcodeComputer::new(values.as_slice());
 
-        intcode_computer.run_program(user_input);
+        intcode_computer.set_input(user_input);
+        intcode_computer.execute_program();
 
         let expected = vec![3500, 9, 10, 70, 2, 3, 11, 0, 99, 30, 40, 50];
 
@@ -230,7 +226,7 @@ mod tests {
     }
 
     #[test]
-    fn test_run_program_until_first_input_opcode() {
+    fn test_execute_program_until_waiting() {
         let program = vec![
             3, 15, 3, 16, 1002, 16, 10, 16, 1, 16, 15, 15, 4, 15, 99, 0, 0,
         ];
@@ -238,7 +234,7 @@ mod tests {
 
         let expected_computer = IntcodeComputer::new(program.as_slice());
 
-        let (result, output) = intcode_computer.run_program_until_first_input_opcode();
+        let (result, output) = intcode_computer.execute_program();
 
         assert_eq!(intcode_computer, expected_computer);
         assert_eq!(result, IntcodeComputerResult::WAITING);
@@ -246,7 +242,7 @@ mod tests {
     }
 
     #[test]
-    fn test_continue_program_until_next_first_input_opcode_single_run() {
+    fn test_execute_program_until_next_waiting() {
         let program = vec![
             3, 15, 3, 16, 1002, 16, 10, 16, 1, 16, 15, 15, 4, 15, 99, 0, 0,
         ];
@@ -276,12 +272,16 @@ mod tests {
             current_program: expected_current_program.clone(),
             current_index: 2,
             original_program: program.clone(),
+            current_input: None,
         };
 
-        intcode_computer.run_program_until_first_input_opcode();
+        // waits at first input
+        intcode_computer.execute_program();
+        // sets first input
+        intcode_computer.set_input(first_input);
 
         let (result, output) =
-            intcode_computer.continue_program_until_next_input_opcode(first_input);
+            intcode_computer.execute_program();
 
         assert_eq!(intcode_computer, expected_computer);
         assert_eq!(result, IntcodeComputerResult::WAITING);
@@ -289,7 +289,7 @@ mod tests {
     }
 
     #[test]
-    fn test_continue_program_until_next_first_input_opcode_run_to_some() {
+    fn test_execute_program_until_finished() {
         let program = vec![3, 11, 3, 12, 1, 12, 11, 11, 4, 11, 99, 0, 0];
         let mut intcode_computer = IntcodeComputer::new(program.as_slice());
         let first_input = 656;
@@ -301,12 +301,20 @@ mod tests {
             current_program: expected_current_program.clone(),
             current_index: 10,
             original_program: program.clone(),
+            current_input: None,
         };
         let expected_result = (IntcodeComputerResult::FINISHED, Some(666));
 
-        intcode_computer.run_program_until_first_input_opcode();
-        intcode_computer.continue_program_until_next_input_opcode(first_input);
-        let result = intcode_computer.continue_program_until_next_input_opcode(second_input);
+        // waits at first input
+        intcode_computer.execute_program();
+        // sets first input
+        intcode_computer.set_input(first_input);
+        // waits at second input
+        intcode_computer.execute_program();
+        // sets second input
+        intcode_computer.set_input(second_input);
+
+        let result = intcode_computer.execute_program();
 
         assert_eq!(intcode_computer, expected_computer);
         assert_eq!(result, expected_result);
@@ -325,7 +333,8 @@ mod tests {
 
         let mut intcode_computer = IntcodeComputer::new(values.as_slice());
 
-        intcode_computer.run_program(user_input);
+        intcode_computer.set_input(user_input);
+        intcode_computer.execute_program();
         intcode_computer.reset();
 
         let expected_program = vec![1, 9, 10, 3, 2, 3, 11, 0, 99, 30, 40, 50];

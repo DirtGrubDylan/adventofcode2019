@@ -26,18 +26,17 @@ impl Amplifier {
     }
 
     pub fn run_program(&mut self) -> Result<(IntcodeComputerResult, i32), String> {
-        self.intcode_computer.run_program_until_first_input_opcode();
+        self.intcode_computer.set_input(self.phase_setting);
 
-        self.intcode_computer
-            .continue_program_until_next_input_opcode(self.phase_setting);
+        self.intcode_computer.execute_program();
 
         self.continue_program()
     }
 
     pub fn continue_program(&mut self) -> Result<(IntcodeComputerResult, i32), String> {
-        let (result, output) = self
-            .intcode_computer
-            .continue_program_until_next_input_opcode(self.input_signal);
+        self.intcode_computer.set_input(self.input_signal);
+
+        let (result, output) = self.intcode_computer.execute_program();
 
         match output {
             Some(value) => Ok((result, value)),

@@ -15,9 +15,11 @@ pub fn run_day_5() {
                 let user_input = get_user_input();
                 let mut intcode_computer = IntcodeComputer::from(program_values.as_slice());
 
-                let output_values = intcode_computer.run_program(user_input);
+                intcode_computer.set_input(user_input);
 
-                println!("System output values are: {:?}", output_values);
+                let (_, output) = intcode_computer.execute_program();
+
+                println!("System output is: {}", output.unwrap());
             }
         }
         Err(error) => println!("Error parsing file: {:?}", error),
