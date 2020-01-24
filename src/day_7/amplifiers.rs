@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
 
-use crate::intcode_computer::{IntcodeComputer, IntcodeComputerResult};
+use crate::intcode_computer::{IntcodeComputer, IntcodeComputerStatus};
 
 #[derive(Debug, PartialEq)]
 pub struct Amplifier {
@@ -25,7 +25,7 @@ impl Amplifier {
         }
     }
 
-    pub fn run_program(&mut self) -> Result<(IntcodeComputerResult, i128), String> {
+    pub fn run_program(&mut self) -> Result<i128, String> {
         self.intcode_computer.set_input(self.phase_setting as i128);
 
         self.intcode_computer.execute_program();
@@ -33,15 +33,16 @@ impl Amplifier {
         self.continue_program()
     }
 
-    pub fn continue_program(&mut self) -> Result<(IntcodeComputerResult, i128), String> {
+    pub fn continue_program(&mut self) -> Result<i128, String> {
         self.intcode_computer.set_input(self.input_signal);
 
-        let (result, output) = self.intcode_computer.execute_program();
+        let output = self.intcode_computer.execute_program();
 
-        match output {
-            Some(value) => Ok((result, value)),
-            None => Err(format!("Something went wrong for amplifier: {}", self.name)),
-        }
+        output.ok_or(format!("Something went wrong for amplifier: {}", self.name))
+    }
+
+    pub fn get_status(&self) -> IntcodeComputerStatus {
+        self.intcode_computer.get_status()
     }
 
     pub fn reset_computer(&mut self) {
@@ -102,7 +103,7 @@ impl AmplifierCircuit {
                 amplifier.phase_setting = phase_setting;
                 amplifier.input_signal = next_input_signal;
 
-                let (result, output) = match is_first_run {
+                let output = match is_first_run {
                     true => amplifier.run_program().unwrap(),
                     false => amplifier.continue_program().unwrap(),
                 };
@@ -112,7 +113,7 @@ impl AmplifierCircuit {
                     best_output_signal = output;
                 }
 
-                if (result == IntcodeComputerResult::FINISHED)
+                if (amplifier.get_status() == IntcodeComputerStatus::Finished)
                     && (amplifier_index == (number_of_amplifiers - 1))
                 {
                     break;
@@ -198,11 +199,12 @@ mod tests {
     #[test]
     fn test_amplifier_run_progrom() {
         run_amplifier_test(|mut amplifier| {
-            let expected = Ok((IntcodeComputerResult::FINISHED, 4));
+            let expected = Ok(4);
 
             let result = amplifier.run_program();
 
             assert_eq!(result, expected);
+            assert_eq!(amplifier.get_status(), IntcodeComputerStatus::Finished);
         });
     }
 

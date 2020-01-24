@@ -3,18 +3,20 @@ pub mod intcode_instruction;
 use intcode_instruction::Opcode;
 use std::collections::HashMap;
 
-#[derive(Debug, PartialEq)]
-pub enum IntcodeComputerResult {
-    WAITING,
-    FINISHED,
+#[derive(Debug, PartialEq, Clone)]
+pub enum IntcodeComputerStatus {
+    NotStarted,
+    WaitingForInput,
+    Finished,
 }
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct IntcodeComputer {
     current_program: HashMap<u128, i128>,
     current_index: u128,
-    original_program: HashMap<u128, i128>,
     current_input: Option<i128>,
+    current_status: IntcodeComputerStatus,
+    original_program: HashMap<u128, i128>,
 }
 
 impl IntcodeComputer {
@@ -25,9 +27,9 @@ impl IntcodeComputer {
         args.into()
     }
 
-    pub fn execute_program(&mut self) -> (IntcodeComputerResult, Option<i128>) {
+    pub fn execute_program(&mut self) -> Option<i128> {
         let mut output = None;
-        let mut result = IntcodeComputerResult::WAITING;
+        self.current_status = IntcodeComputerStatus::WaitingForInput;
 
         let mut opcode = Opcode::new(
             self.current_input.unwrap_or(0),
@@ -37,7 +39,7 @@ impl IntcodeComputer {
 
         if let Opcode::SaveInput(_, _) = opcode {
             if self.current_input.is_none() {
-                return (result, output);
+                return output;
             }
         }
 
@@ -59,18 +61,16 @@ impl IntcodeComputer {
 
             if let Opcode::SaveInput(_, _) = next_opcode {
                 if self.current_input.is_none() {
-                    result = IntcodeComputerResult::WAITING;
-
-                    return (result, output);
+                    return output;
                 }
             }
 
             opcode = next_opcode;
         }
 
-        result = IntcodeComputerResult::FINISHED;
+        self.current_status = IntcodeComputerStatus::Finished;
 
-        (result, output)
+        output
     }
 
     pub fn set_input(&mut self, input: i128) {
@@ -88,13 +88,18 @@ impl IntcodeComputer {
     }
 
     pub fn reset(&mut self) {
-        self.current_index = 0;
         self.current_program = self.original_program.clone();
+        self.current_index = 0;
         self.current_input = None;
+        self.current_status = IntcodeComputerStatus::NotStarted;
     }
 
     pub fn get_current_memory(&self) -> HashMap<u128, i128> {
         self.current_program.clone()
+    }
+
+    pub fn get_status(&self) -> IntcodeComputerStatus {
+        self.current_status.clone()
     }
 }
 
@@ -109,8 +114,9 @@ impl From<&[i128]> for IntcodeComputer {
         IntcodeComputer {
             current_program: temp_hash_map.clone(),
             current_index: 0,
-            original_program: temp_hash_map.clone(),
             current_input: None,
+            current_status: IntcodeComputerStatus::NotStarted,
+            original_program: temp_hash_map.clone(),
         }
     }
 }
@@ -126,8 +132,9 @@ impl From<&[i32]> for IntcodeComputer {
         IntcodeComputer {
             current_program: temp_hash_map.clone(),
             current_index: 0,
-            original_program: temp_hash_map.clone(),
             current_input: None,
+            current_status: IntcodeComputerStatus::NotStarted,
+            original_program: temp_hash_map.clone(),
         }
     }
 }
@@ -157,8 +164,9 @@ mod tests {
         let expected = IntcodeComputer {
             current_program: hash_map.clone(),
             current_index: 0,
-            original_program: hash_map.clone(),
             current_input: None,
+            current_status: IntcodeComputerStatus::NotStarted,
+            original_program: hash_map.clone(),
         };
 
         let result = IntcodeComputer::new(values.as_slice());
@@ -279,12 +287,17 @@ mod tests {
         ];
         let mut intcode_computer = IntcodeComputer::new(program.as_slice());
 
-        let expected_computer = IntcodeComputer::new(program.as_slice());
+        let mut expected_computer = IntcodeComputer::new(program.as_slice());
 
-        let (result, output) = intcode_computer.execute_program();
+        expected_computer.current_status = IntcodeComputerStatus::WaitingForInput;
+
+        let output = intcode_computer.execute_program();
 
         assert_eq!(intcode_computer, expected_computer);
-        assert_eq!(result, IntcodeComputerResult::WAITING);
+        assert_eq!(
+            intcode_computer.get_status(),
+            IntcodeComputerStatus::WaitingForInput
+        );
         assert!(output.is_none());
     }
 
@@ -328,8 +341,9 @@ mod tests {
         let expected_computer = IntcodeComputer {
             current_program: expected_hash_map.clone(),
             current_index: 2,
-            original_program: program_hash_map.clone(),
             current_input: None,
+            current_status: IntcodeComputerStatus::WaitingForInput,
+            original_program: program_hash_map.clone(),
         };
 
         // waits at first input
@@ -337,10 +351,13 @@ mod tests {
         // sets first input
         intcode_computer.set_input(first_input);
 
-        let (result, output) = intcode_computer.execute_program();
+        let output = intcode_computer.execute_program();
 
         assert_eq!(intcode_computer, expected_computer);
-        assert_eq!(result, IntcodeComputerResult::WAITING);
+        assert_eq!(
+            intcode_computer.get_status(),
+            IntcodeComputerStatus::WaitingForInput
+        );
         assert!(output.is_none());
     }
 
@@ -366,10 +383,11 @@ mod tests {
         let expected_computer = IntcodeComputer {
             current_program: expected_hash_map.clone(),
             current_index: 10,
-            original_program: program_hash_map.clone(),
             current_input: None,
+            current_status: IntcodeComputerStatus::Finished,
+            original_program: program_hash_map.clone(),
         };
-        let expected_result = (IntcodeComputerResult::FINISHED, Some(666));
+        let expected_result = Some(666);
 
         // waits at first input
         intcode_computer.execute_program();

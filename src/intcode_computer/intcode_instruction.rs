@@ -214,7 +214,7 @@ impl Opcode {
                 let second_value =
                     Self::get_parameter_value_from_memory(second_parameter, program_memory);
 
-                if second_value < 0 {
+                if second_value.is_negative() {
                     panic!(
                         "JumpIfTrue second value {} cannot be negative!",
                         second_value
@@ -238,7 +238,7 @@ impl Opcode {
                 let second_value =
                     Self::get_parameter_value_from_memory(second_parameter, program_memory);
 
-                if second_value < 0 {
+                if second_value.is_negative() {
                     panic!(
                         "JumpIfFalse second value {} cannot be negative!",
                         second_value
@@ -319,6 +319,10 @@ impl Opcode {
 
     // Transforms a negative index to wrap
     fn transform_index(index: i128) -> u128 {
+        if index.is_negative() {
+            panic!("Intcode index {} cannot be negative!", index);
+        }
+
         index as u128
     }
 }
