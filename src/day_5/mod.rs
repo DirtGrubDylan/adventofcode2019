@@ -26,7 +26,7 @@ pub fn run_day_5() {
     }
 }
 
-fn get_user_input() -> i32 {
+fn get_user_input() -> i128 {
     let mut input_buffer = String::new();
 
     print!("Please input a system ID to diagnose: ");
@@ -39,6 +39,6 @@ fn get_user_input() -> i32 {
 
     input_buffer
         .trim()
-        .parse::<i32>()
+        .parse::<i128>()
         .expect("Failed to parse user_input!")
 }

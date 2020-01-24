@@ -26,7 +26,7 @@ impl Amplifier {
     }
 
     pub fn run_program(&mut self) -> Result<(IntcodeComputerResult, i128), String> {
-        self.intcode_computer.set_input(self.phase_setting);
+        self.intcode_computer.set_input(self.phase_setting as i128);
 
         self.intcode_computer.execute_program();
 
@@ -34,7 +34,7 @@ impl Amplifier {
     }
 
     pub fn continue_program(&mut self) -> Result<(IntcodeComputerResult, i128), String> {
-        self.intcode_computer.set_input(self.input_signal as i32);
+        self.intcode_computer.set_input(self.input_signal);
 
         let (result, output) = self.intcode_computer.execute_program();
 

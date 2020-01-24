@@ -31,7 +31,7 @@ pub enum Opcode {
 
 impl Opcode {
     pub fn new(
-        user_input: i32,
+        user_input: i128,
         program_memory: &HashMap<u128, i128>,
         current_index: u128,
     ) -> Opcode {

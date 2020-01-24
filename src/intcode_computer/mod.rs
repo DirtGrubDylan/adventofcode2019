@@ -14,7 +14,7 @@ pub struct IntcodeComputer {
     current_program: HashMap<u128, i128>,
     current_index: u128,
     original_program: HashMap<u128, i128>,
-    current_input: Option<i32>,
+    current_input: Option<i128>,
 }
 
 impl IntcodeComputer {
@@ -73,7 +73,7 @@ impl IntcodeComputer {
         (result, output)
     }
 
-    pub fn set_input(&mut self, input: i32) {
+    pub fn set_input(&mut self, input: i128) {
         self.current_input = Some(input);
     }
 
