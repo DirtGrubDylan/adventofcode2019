@@ -98,6 +98,23 @@ impl IntcodeComputer {
     }
 }
 
+impl From<&[i128]> for IntcodeComputer {
+    fn from(a: &[i128]) -> IntcodeComputer {
+        let temp_hash_map: HashMap<u128, i128> = a
+            .iter()
+            .enumerate()
+            .map(|(index, &value)| (index as u128, value))
+            .collect();
+
+        IntcodeComputer {
+            current_program: temp_hash_map.clone(),
+            current_index: 0,
+            original_program: temp_hash_map.clone(),
+            current_input: None,
+        }
+    }
+}
+
 impl From<&[i32]> for IntcodeComputer {
     fn from(a: &[i32]) -> IntcodeComputer {
         let temp_hash_map: HashMap<u128, i128> = a
@@ -117,7 +134,7 @@ impl From<&[i32]> for IntcodeComputer {
 
 impl From<&[String]> for IntcodeComputer {
     fn from(a: &[String]) -> IntcodeComputer {
-        let temp: Vec<i32> = a.iter().map(|s| s.parse::<i32>().unwrap()).collect();
+        let temp: Vec<i128> = a.iter().map(|s| s.parse::<i128>().unwrap()).collect();
 
         IntcodeComputer::new(temp.as_slice())
     }
