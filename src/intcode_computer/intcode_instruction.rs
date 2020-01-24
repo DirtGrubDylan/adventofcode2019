@@ -30,144 +30,7 @@ pub enum Opcode {
 }
 
 impl Opcode {
-    pub fn new(user_input: i32, program_memory: &[i32], current_index: usize) -> Opcode {
-        let instruction_definitions = match program_memory.get(current_index) {
-            Some(value) => value,
-            None => panic!("current_index is outside of program_memory bounds!"),
-        };
-
-        let opcode_value = instruction_definitions % 100;
-
-        let first_parameter_mode = ((instruction_definitions / 100) % 10) as i128;
-        let second_parameter_mode = ((instruction_definitions / 1000) % 10) as i128;
-        let third_parameter_mode = (instruction_definitions / 10000) as i128;
-
-        match opcode_value {
-            1 => {
-                let first_parameter = Parameter::new(
-                    first_parameter_mode,
-                    program_memory[current_index + 1] as i128,
-                );
-
-                let second_parameter = Parameter::new(
-                    second_parameter_mode,
-                    program_memory[current_index + 2] as i128,
-                );
-
-                let third_parameter = Parameter::new(
-                    third_parameter_mode,
-                    program_memory[current_index + 3] as i128,
-                );
-
-                Opcode::Add(first_parameter, second_parameter, third_parameter)
-            }
-            2 => {
-                let first_parameter = Parameter::new(
-                    first_parameter_mode,
-                    program_memory[current_index + 1] as i128,
-                );
-
-                let second_parameter = Parameter::new(
-                    second_parameter_mode,
-                    program_memory[current_index + 2] as i128,
-                );
-
-                let third_parameter = Parameter::new(
-                    third_parameter_mode,
-                    program_memory[current_index + 3] as i128,
-                );
-
-                Opcode::Multiply(first_parameter, second_parameter, third_parameter)
-            }
-            3 => {
-                let input_parameter = Parameter::new(1, user_input as i128);
-
-                let first_parameter = Parameter::new(
-                    first_parameter_mode,
-                    program_memory[current_index + 1] as i128,
-                );
-
-                Opcode::SaveInput(input_parameter, first_parameter)
-            }
-            4 => {
-                let first_parameter = Parameter::new(
-                    first_parameter_mode,
-                    program_memory[current_index + 1] as i128,
-                );
-
-                Opcode::Output(first_parameter)
-            }
-            5 => {
-                let first_parameter = Parameter::new(
-                    first_parameter_mode,
-                    program_memory[current_index + 1] as i128,
-                );
-
-                let second_parameter = Parameter::new(
-                    second_parameter_mode,
-                    program_memory[current_index + 2] as i128,
-                );
-
-                Opcode::JumpIfTrue(first_parameter, second_parameter)
-            }
-            6 => {
-                let first_parameter = Parameter::new(
-                    first_parameter_mode,
-                    program_memory[current_index + 1] as i128,
-                );
-
-                let second_parameter = Parameter::new(
-                    second_parameter_mode,
-                    program_memory[current_index + 2] as i128,
-                );
-
-                Opcode::JumpIfFalse(first_parameter, second_parameter)
-            }
-            7 => {
-                let first_parameter = Parameter::new(
-                    first_parameter_mode,
-                    program_memory[current_index + 1] as i128,
-                );
-
-                let second_parameter = Parameter::new(
-                    second_parameter_mode,
-                    program_memory[current_index + 2] as i128,
-                );
-
-                let third_parameter = Parameter::new(
-                    third_parameter_mode,
-                    program_memory[current_index + 3] as i128,
-                );
-
-                Opcode::StoreIfLessThan(first_parameter, second_parameter, third_parameter)
-            }
-            8 => {
-                let first_parameter = Parameter::new(
-                    first_parameter_mode,
-                    program_memory[current_index + 1] as i128,
-                );
-
-                let second_parameter = Parameter::new(
-                    second_parameter_mode,
-                    program_memory[current_index + 2] as i128,
-                );
-
-                let third_parameter = Parameter::new(
-                    third_parameter_mode,
-                    program_memory[current_index + 3] as i128,
-                );
-
-                Opcode::StoreIfEquals(first_parameter, second_parameter, third_parameter)
-            }
-            99 => Opcode::Terminate,
-            _ => panic!(
-                "Unexpected opcode given (instruction, index): {:?}",
-                (instruction_definitions, current_index)
-            ),
-        }
-    }
-
-    pub fn new_hash(
+    pub fn new(
         user_input: i32,
         program_memory: &HashMap<u128, i128>,
         current_index: u128,
@@ -276,163 +139,8 @@ impl Opcode {
         }
     }
 
-    // Returns values of the Add, Multiply, SaveInput, and Output and the next index.
-    // None if Terminate
-    pub fn execute(
-        &self,
-        program_memory: &mut [i32],
-        current_index: usize,
-    ) -> Option<(i32, usize)> {
-        match self {
-            Opcode::Add(first_parameter, second_parameter, third_parameter) => {
-                let first_value =
-                    Self::get_parameter_value_from_memory(first_parameter, program_memory);
-
-                let second_value =
-                    Self::get_parameter_value_from_memory(second_parameter, program_memory);
-
-                let save_index = match third_parameter {
-                    Parameter::Position(index) => Self::transform_index(*index, program_memory),
-                    Parameter::Immediate(_) => {
-                        panic!("Cannot save a value with an immediate parameter!")
-                    }
-                };
-
-                let sum = first_value + second_value;
-
-                program_memory[save_index as usize] = sum as i32;
-
-                Some((sum as i32, current_index + 4))
-            }
-            Opcode::Multiply(first_parameter, second_parameter, third_parameter) => {
-                let first_value =
-                    Self::get_parameter_value_from_memory(first_parameter, program_memory);
-
-                let second_value =
-                    Self::get_parameter_value_from_memory(second_parameter, program_memory);
-
-                let save_index = match third_parameter {
-                    Parameter::Position(index) => Self::transform_index(*index, program_memory),
-                    Parameter::Immediate(_) => {
-                        panic!("Cannot save a value with an immediate parameter!")
-                    }
-                };
-
-                let product = first_value * second_value;
-
-                program_memory[save_index as usize] = product as i32;
-
-                Some((product as i32, current_index + 4))
-            }
-            Opcode::SaveInput(input_parameter, first_parameter) => {
-                let input_value =
-                    Self::get_parameter_value_from_memory(input_parameter, program_memory);
-
-                let save_index = match first_parameter {
-                    Parameter::Position(index) => Self::transform_index(*index, program_memory),
-                    Parameter::Immediate(_) => {
-                        panic!("Cannot save a value with an immediate parameter!")
-                    }
-                };
-
-                program_memory[save_index as usize] = input_value as i32;
-
-                Some((input_value as i32, current_index + 2))
-            }
-            Opcode::Output(first_parameter) => {
-                let output_value =
-                    Self::get_parameter_value_from_memory(first_parameter, program_memory);
-
-                Some((output_value as i32, current_index + 2))
-            }
-            Opcode::JumpIfTrue(first_parameter, second_parameter) => {
-                let first_value =
-                    Self::get_parameter_value_from_memory(first_parameter, program_memory);
-
-                let second_value =
-                    Self::get_parameter_value_from_memory(second_parameter, program_memory);
-
-                let mut success_value = 0;
-                let mut next_index = current_index + 3;
-
-                if first_value != 0 {
-                    success_value = 1;
-                    next_index = second_value as usize;
-                }
-
-                Some((success_value, next_index))
-            }
-            Opcode::JumpIfFalse(first_parameter, second_parameter) => {
-                let first_value =
-                    Self::get_parameter_value_from_memory(first_parameter, program_memory);
-
-                let second_value =
-                    Self::get_parameter_value_from_memory(second_parameter, program_memory);
-
-                let mut success_value = 0;
-                let mut next_index = current_index + 3;
-
-                if first_value == 0 {
-                    success_value = 1;
-                    next_index = second_value as usize;
-                }
-
-                Some((success_value, next_index))
-            }
-            Opcode::StoreIfLessThan(first_parameter, second_parameter, third_parameter) => {
-                let first_value =
-                    Self::get_parameter_value_from_memory(first_parameter, program_memory);
-
-                let second_value =
-                    Self::get_parameter_value_from_memory(second_parameter, program_memory);
-
-                let save_index = match third_parameter {
-                    Parameter::Position(index) => Self::transform_index(*index, program_memory),
-                    Parameter::Immediate(_) => {
-                        panic!("Cannot save a value with an immediate parameter!")
-                    }
-                };
-
-                let mut success_value = 0;
-
-                if first_value < second_value {
-                    success_value = 1;
-                }
-
-                program_memory[save_index as usize] = success_value;
-
-                Some((success_value, current_index + 4))
-            }
-            Opcode::StoreIfEquals(first_parameter, second_parameter, third_parameter) => {
-                let first_value =
-                    Self::get_parameter_value_from_memory(first_parameter, program_memory);
-
-                let second_value =
-                    Self::get_parameter_value_from_memory(second_parameter, program_memory);
-
-                let save_index = match third_parameter {
-                    Parameter::Position(index) => Self::transform_index(*index, program_memory),
-                    Parameter::Immediate(_) => {
-                        panic!("Cannot save a value with an immediate parameter!")
-                    }
-                };
-
-                let mut success_value = 0;
-
-                if first_value == second_value {
-                    success_value = 1;
-                }
-
-                program_memory[save_index as usize] = success_value;
-
-                Some((success_value, current_index + 4))
-            }
-            Opcode::Terminate => None,
-        }
-    }
-
     // Returns values of the opcodes. None if Terminate.
-    pub fn execute_new(
+    pub fn execute(
         &self,
         program_memory: &mut HashMap<u128, i128>,
         current_index: u128,
@@ -440,13 +148,13 @@ impl Opcode {
         match self {
             Opcode::Add(first_parameter, second_parameter, third_parameter) => {
                 let first_value =
-                    Self::get_parameter_value_from_memory_new(first_parameter, program_memory);
+                    Self::get_parameter_value_from_memory(first_parameter, program_memory);
 
                 let second_value =
-                    Self::get_parameter_value_from_memory_new(second_parameter, program_memory);
+                    Self::get_parameter_value_from_memory(second_parameter, program_memory);
 
                 let save_index = match third_parameter {
-                    Parameter::Position(index) => Self::transform_index_new(*index),
+                    Parameter::Position(index) => Self::transform_index(*index),
                     Parameter::Immediate(_) => {
                         panic!("Cannot save a value with an immediate parameter!")
                     }
@@ -460,13 +168,13 @@ impl Opcode {
             }
             Opcode::Multiply(first_parameter, second_parameter, third_parameter) => {
                 let first_value =
-                    Self::get_parameter_value_from_memory_new(first_parameter, program_memory);
+                    Self::get_parameter_value_from_memory(first_parameter, program_memory);
 
                 let second_value =
-                    Self::get_parameter_value_from_memory_new(second_parameter, program_memory);
+                    Self::get_parameter_value_from_memory(second_parameter, program_memory);
 
                 let save_index = match third_parameter {
-                    Parameter::Position(index) => Self::transform_index_new(*index),
+                    Parameter::Position(index) => Self::transform_index(*index),
                     Parameter::Immediate(_) => {
                         panic!("Cannot save a value with an immediate parameter!")
                     }
@@ -480,10 +188,10 @@ impl Opcode {
             }
             Opcode::SaveInput(input_parameter, first_parameter) => {
                 let input_value =
-                    Self::get_parameter_value_from_memory_new(input_parameter, program_memory);
+                    Self::get_parameter_value_from_memory(input_parameter, program_memory);
 
                 let save_index = match first_parameter {
-                    Parameter::Position(index) => Self::transform_index_new(*index),
+                    Parameter::Position(index) => Self::transform_index(*index),
                     Parameter::Immediate(_) => {
                         panic!("Cannot save a value with an immediate parameter!")
                     }
@@ -495,16 +203,16 @@ impl Opcode {
             }
             Opcode::Output(first_parameter) => {
                 let output_value =
-                    Self::get_parameter_value_from_memory_new(first_parameter, program_memory);
+                    Self::get_parameter_value_from_memory(first_parameter, program_memory);
 
                 Some((output_value, current_index + 2))
             }
             Opcode::JumpIfTrue(first_parameter, second_parameter) => {
                 let first_value =
-                    Self::get_parameter_value_from_memory_new(first_parameter, program_memory);
+                    Self::get_parameter_value_from_memory(first_parameter, program_memory);
 
                 let second_value =
-                    Self::get_parameter_value_from_memory_new(second_parameter, program_memory);
+                    Self::get_parameter_value_from_memory(second_parameter, program_memory);
 
                 if second_value < 0 {
                     panic!(
@@ -525,10 +233,10 @@ impl Opcode {
             }
             Opcode::JumpIfFalse(first_parameter, second_parameter) => {
                 let first_value =
-                    Self::get_parameter_value_from_memory_new(first_parameter, program_memory);
+                    Self::get_parameter_value_from_memory(first_parameter, program_memory);
 
                 let second_value =
-                    Self::get_parameter_value_from_memory_new(second_parameter, program_memory);
+                    Self::get_parameter_value_from_memory(second_parameter, program_memory);
 
                 if second_value < 0 {
                     panic!(
@@ -549,13 +257,13 @@ impl Opcode {
             }
             Opcode::StoreIfLessThan(first_parameter, second_parameter, third_parameter) => {
                 let first_value =
-                    Self::get_parameter_value_from_memory_new(first_parameter, program_memory);
+                    Self::get_parameter_value_from_memory(first_parameter, program_memory);
 
                 let second_value =
-                    Self::get_parameter_value_from_memory_new(second_parameter, program_memory);
+                    Self::get_parameter_value_from_memory(second_parameter, program_memory);
 
                 let save_index = match third_parameter {
-                    Parameter::Position(index) => Self::transform_index_new(*index),
+                    Parameter::Position(index) => Self::transform_index(*index),
                     Parameter::Immediate(_) => {
                         panic!("Cannot save a value with an immediate parameter!")
                     }
@@ -573,13 +281,13 @@ impl Opcode {
             }
             Opcode::StoreIfEquals(first_parameter, second_parameter, third_parameter) => {
                 let first_value =
-                    Self::get_parameter_value_from_memory_new(first_parameter, program_memory);
+                    Self::get_parameter_value_from_memory(first_parameter, program_memory);
 
                 let second_value =
-                    Self::get_parameter_value_from_memory_new(second_parameter, program_memory);
+                    Self::get_parameter_value_from_memory(second_parameter, program_memory);
 
                 let save_index = match third_parameter {
-                    Parameter::Position(index) => Self::transform_index_new(*index),
+                    Parameter::Position(index) => Self::transform_index(*index),
                     Parameter::Immediate(_) => {
                         panic!("Cannot save a value with an immediate parameter!")
                     }
@@ -599,38 +307,18 @@ impl Opcode {
         }
     }
 
-    fn get_parameter_value_from_memory(parameter: &Parameter, program_memory: &[i32]) -> i128 {
-        match parameter {
-            Parameter::Position(index) => {
-                program_memory[Self::transform_index(*index, program_memory) as usize] as i128
-            }
-            Parameter::Immediate(value) => *value,
-        }
-    }
-
-    fn get_parameter_value_from_memory_new(
+    fn get_parameter_value_from_memory(
         parameter: &Parameter,
         program_memory: &mut HashMap<u128, i128>,
     ) -> i128 {
         match parameter {
-            Parameter::Position(index) => {
-                *program_memory.entry(*index as u128).or_insert(0)
-            }
+            Parameter::Position(index) => *program_memory.entry(*index as u128).or_insert(0),
             Parameter::Immediate(value) => *value,
         }
     }
 
     // Transforms a negative index to wrap
-    fn transform_index(index: i128, program_memory: &[i32]) -> u128 {
-        if index < 0 {
-            ((program_memory.len() as i128) + index) as u128
-        } else {
-            index as u128
-        }
-    }
-
-    // Transforms a negative index to wrap
-    fn transform_index_new(index: i128) -> u128 {
+    fn transform_index(index: i128) -> u128 {
         index as u128
     }
 }
@@ -641,7 +329,11 @@ mod tests {
 
     #[test]
     fn test_new_add() {
-        let program_memory = vec![1, 9, 10, 3, 2, 3, 11, 0, 99, 30, 40, 50];
+        let program_memory = [1, 9, 10, 3, 2, 3, 11, 0, 99, 30, 40, 50]
+            .iter()
+            .enumerate()
+            .map(|(index, &value)| (index as u128, value as i128))
+            .collect();
         let user_input = 1;
         let current_index = 0;
 
@@ -658,7 +350,11 @@ mod tests {
 
     #[test]
     fn test_new_multiply() {
-        let program_memory = vec![1002, 4, 3, 4, 33];
+        let program_memory = [1002, 4, 3, 4, 33]
+            .iter()
+            .enumerate()
+            .map(|(index, &value)| (index as u128, value as i128))
+            .collect();
         let user_input = 1;
         let current_index = 0;
 
@@ -675,7 +371,11 @@ mod tests {
 
     #[test]
     fn test_new_save_input() {
-        let program_memory = vec![3, 0, 4, 0, 99];
+        let program_memory = [3, 0, 4, 0, 99]
+            .iter()
+            .enumerate()
+            .map(|(index, &value)| (index as u128, value as i128))
+            .collect();
         let user_input = 1;
         let current_index = 0;
 
@@ -688,7 +388,11 @@ mod tests {
 
     #[test]
     fn test_new_output() {
-        let program_memory = vec![3, 0, 4, 0, 99];
+        let program_memory = [3, 0, 4, 0, 99]
+            .iter()
+            .enumerate()
+            .map(|(index, &value)| (index as u128, value as i128))
+            .collect();
         let user_input = 1;
         let current_index = 2;
 
@@ -701,7 +405,11 @@ mod tests {
 
     #[test]
     fn test_new_jump_if_true() {
-        let program_memory = vec![5, 4, 5, 4, -1, 99];
+        let program_memory = [5, 4, 5, 4, -1, 99]
+            .iter()
+            .enumerate()
+            .map(|(index, &value)| (index as u128, value as i128))
+            .collect();
         let user_input = 1;
         let current_index = 0;
 
@@ -714,7 +422,11 @@ mod tests {
 
     #[test]
     fn test_new_jump_if_false() {
-        let program_memory = vec![106, 4, 5, 4, -1, 99];
+        let program_memory = [106, 4, 5, 4, -1, 99]
+            .iter()
+            .enumerate()
+            .map(|(index, &value)| (index as u128, value as i128))
+            .collect();
         let user_input = 1;
         let current_index = 0;
 
@@ -727,7 +439,11 @@ mod tests {
 
     #[test]
     fn test_new_store_if_less_than() {
-        let program_memory = vec![3, 9, 7, 9, 10, 9, 4, 9, 99, -1, 8];
+        let program_memory = [3, 9, 7, 9, 10, 9, 4, 9, 99, -1, 8]
+            .iter()
+            .enumerate()
+            .map(|(index, &value)| (index as u128, value as i128))
+            .collect();
         let user_input = 1;
         let current_index = 2;
 
@@ -744,7 +460,11 @@ mod tests {
 
     #[test]
     fn test_new_store_if_equals() {
-        let program_memory = vec![3, 3, 1108, -1, 8, 3, 4, 3, 99];
+        let program_memory = [3, 3, 1108, -1, 8, 3, 4, 3, 99]
+            .iter()
+            .enumerate()
+            .map(|(index, &value)| (index as u128, value as i128))
+            .collect();
         let user_input = 1;
         let current_index = 2;
 
@@ -761,7 +481,11 @@ mod tests {
 
     #[test]
     fn test_new_terminate() {
-        let program_memory = vec![1, 9, 10, 3, 2, 3, 11, 0, 99, 30, 40, 50];
+        let program_memory = [1, 9, 10, 3, 2, 3, 11, 0, 99, 30, 40, 50]
+            .iter()
+            .enumerate()
+            .map(|(index, &value)| (index as u128, value as i128))
+            .collect();
         let user_input = 1;
         let current_index = 8;
 
@@ -774,13 +498,21 @@ mod tests {
 
     #[test]
     fn test_execute_add() {
-        let mut program_memory = vec![1, 9, 10, 3, 2, 3, 11, 0, 99, 30, 40, 50];
+        let mut program_memory = [1, 9, 10, 3, 2, 3, 11, 0, 99, 30, 40, 50]
+            .iter()
+            .enumerate()
+            .map(|(index, &value)| (index as u128, value as i128))
+            .collect();
         let user_input = 1;
         let current_index = 0;
         let opcode = Opcode::new(user_input, &program_memory, current_index);
 
         let expected_output = Some((70, 4));
-        let expected_program_memory = vec![1, 9, 10, 70, 2, 3, 11, 0, 99, 30, 40, 50];
+        let expected_program_memory = [1, 9, 10, 70, 2, 3, 11, 0, 99, 30, 40, 50]
+            .iter()
+            .enumerate()
+            .map(|(index, &value)| (index as u128, value as i128))
+            .collect();
 
         let result = opcode.execute(&mut program_memory, current_index);
 
@@ -790,13 +522,21 @@ mod tests {
 
     #[test]
     fn test_execute_multiply() {
-        let mut program_memory = vec![1002, 4, 3, 4, 33];
+        let mut program_memory = [1002, 4, 3, 4, 33]
+            .iter()
+            .enumerate()
+            .map(|(index, &value)| (index as u128, value as i128))
+            .collect();
         let user_input = 1;
         let current_index = 0;
         let opcode = Opcode::new(user_input, &program_memory, current_index);
 
         let expected_output = Some((99, 4));
-        let expected_program_memory = vec![1002, 4, 3, 4, 99];
+        let expected_program_memory = [1002, 4, 3, 4, 99]
+            .iter()
+            .enumerate()
+            .map(|(index, &value)| (index as u128, value as i128))
+            .collect();
 
         let result = opcode.execute(&mut program_memory, current_index);
 
@@ -806,13 +546,21 @@ mod tests {
 
     #[test]
     fn test_execute_save_input() {
-        let mut program_memory = vec![3, 0, 4, 0, 99];
+        let mut program_memory = [3, 0, 4, 0, 99]
+            .iter()
+            .enumerate()
+            .map(|(index, &value)| (index as u128, value as i128))
+            .collect();
         let user_input = 1;
         let current_index = 0;
         let opcode = Opcode::new(user_input, &program_memory, current_index);
 
         let expected_output = Some((1, 2));
-        let expected_program_memory = vec![1, 0, 4, 0, 99];
+        let expected_program_memory = [1, 0, 4, 0, 99]
+            .iter()
+            .enumerate()
+            .map(|(index, &value)| (index as u128, value as i128))
+            .collect();
 
         let result = opcode.execute(&mut program_memory, current_index);
 
@@ -822,13 +570,21 @@ mod tests {
 
     #[test]
     fn test_execute_output() {
-        let mut program_memory = vec![3, 0, 4, 0, 99];
+        let mut program_memory = [3, 0, 4, 0, 99]
+            .iter()
+            .enumerate()
+            .map(|(index, &value)| (index as u128, value as i128))
+            .collect();
         let user_input = 1;
         let current_index = 2;
         let opcode = Opcode::new(user_input, &program_memory, current_index);
 
         let expected_output = Some((3, 4));
-        let expected_program_memory = vec![3, 0, 4, 0, 99];
+        let expected_program_memory = [3, 0, 4, 0, 99]
+            .iter()
+            .enumerate()
+            .map(|(index, &value)| (index as u128, value as i128))
+            .collect();
 
         let result = opcode.execute(&mut program_memory, current_index);
 
@@ -838,7 +594,11 @@ mod tests {
 
     #[test]
     fn test_execute_jump_if_true() {
-        let mut program_memory = vec![3, 3, 1105, 1, 9, 1101, 0, 0, 12, 4, 12, 99, 1];
+        let mut program_memory = [3, 3, 1105, 1, 9, 1101, 0, 0, 12, 4, 12, 99, 1]
+            .iter()
+            .enumerate()
+            .map(|(index, &value)| (index as u128, value as i128))
+            .collect();
         let user_input = 1;
         let current_index = 2;
         let opcode = Opcode::new(user_input, &program_memory, current_index);
@@ -854,7 +614,11 @@ mod tests {
 
     #[test]
     fn test_execute_no_jump_if_true() {
-        let mut program_memory = vec![3, 3, 5, 6, 9, 1101, 0, 0, 12, 4, 12, 99, 1];
+        let mut program_memory = [3, 3, 5, 6, 9, 1101, 0, 0, 12, 4, 12, 99, 1]
+            .iter()
+            .enumerate()
+            .map(|(index, &value)| (index as u128, value as i128))
+            .collect();
         let user_input = 1;
         let current_index = 2;
         let opcode = Opcode::new(user_input, &program_memory, current_index);
@@ -870,7 +634,11 @@ mod tests {
 
     #[test]
     fn test_execute_jump_if_false() {
-        let mut program_memory = vec![3, 3, 1106, 0, 9, 1101, 0, 0, 12, 4, 12, 99, 1];
+        let mut program_memory = [3, 3, 1106, 0, 9, 1101, 0, 0, 12, 4, 12, 99, 1]
+            .iter()
+            .enumerate()
+            .map(|(index, &value)| (index as u128, value as i128))
+            .collect();
         let user_input = 1;
         let current_index = 2;
         let opcode = Opcode::new(user_input, &program_memory, current_index);
@@ -886,7 +654,11 @@ mod tests {
 
     #[test]
     fn test_execute_no_jump_if_false() {
-        let mut program_memory = vec![3, 3, 6, 6, 9, 1101, 1, 0, 12, 4, 12, 99, 1];
+        let mut program_memory = [3, 3, 6, 6, 9, 1101, 1, 0, 12, 4, 12, 99, 1]
+            .iter()
+            .enumerate()
+            .map(|(index, &value)| (index as u128, value as i128))
+            .collect();
         let user_input = 1;
         let current_index = 2;
         let opcode = Opcode::new(user_input, &program_memory, current_index);
@@ -902,13 +674,21 @@ mod tests {
 
     #[test]
     fn test_execute_store_if_less_than() {
-        let mut program_memory = vec![3, 3, 1107, 7, 8, 3, 4, 3, 99];
+        let mut program_memory = [3, 3, 1107, 7, 8, 3, 4, 3, 99]
+            .iter()
+            .enumerate()
+            .map(|(index, &value)| (index as u128, value as i128))
+            .collect();
         let user_input = 1;
         let current_index = 2;
         let opcode = Opcode::new(user_input, &program_memory, current_index);
 
         let expected_output = Some((1, 6));
-        let expected_program_memory = vec![3, 3, 1107, 1, 8, 3, 4, 3, 99];
+        let expected_program_memory = [3, 3, 1107, 1, 8, 3, 4, 3, 99]
+            .iter()
+            .enumerate()
+            .map(|(index, &value)| (index as u128, value as i128))
+            .collect();
 
         let result = opcode.execute(&mut program_memory, current_index);
 
@@ -918,13 +698,21 @@ mod tests {
 
     #[test]
     fn test_execute_no_store_if_less_than() {
-        let mut program_memory = vec![3, 9, 7, 9, 10, 9, 4, 9, 99, 8, 8];
+        let mut program_memory = [3, 9, 7, 9, 10, 9, 4, 9, 99, 8, 8]
+            .iter()
+            .enumerate()
+            .map(|(index, &value)| (index as u128, value as i128))
+            .collect();
         let user_input = 1;
         let current_index = 2;
         let opcode = Opcode::new(user_input, &program_memory, current_index);
 
         let expected_output = Some((0, 6));
-        let expected_program_memory = vec![3, 9, 7, 9, 10, 9, 4, 9, 99, 0, 8];
+        let expected_program_memory = [3, 9, 7, 9, 10, 9, 4, 9, 99, 0, 8]
+            .iter()
+            .enumerate()
+            .map(|(index, &value)| (index as u128, value as i128))
+            .collect();
 
         let result = opcode.execute(&mut program_memory, current_index);
 
@@ -934,13 +722,21 @@ mod tests {
 
     #[test]
     fn test_execute_store_if_equals() {
-        let mut program_memory = vec![3, 3, 1108, 8, 8, 3, 4, 3, 99];
+        let mut program_memory = [3, 3, 1108, 8, 8, 3, 4, 3, 99]
+            .iter()
+            .enumerate()
+            .map(|(index, &value)| (index as u128, value as i128))
+            .collect();
         let user_input = 1;
         let current_index = 2;
         let opcode = Opcode::new(user_input, &program_memory, current_index);
 
         let expected_output = Some((1, 6));
-        let expected_program_memory = vec![3, 3, 1108, 1, 8, 3, 4, 3, 99];
+        let expected_program_memory = [3, 3, 1108, 1, 8, 3, 4, 3, 99]
+            .iter()
+            .enumerate()
+            .map(|(index, &value)| (index as u128, value as i128))
+            .collect();
 
         let result = opcode.execute(&mut program_memory, current_index);
 
@@ -950,13 +746,21 @@ mod tests {
 
     #[test]
     fn test_execute_no_store_if_equals() {
-        let mut program_memory = vec![3, 9, 8, 9, 10, 9, 4, 9, 99, -1, 8];
+        let mut program_memory = [3, 9, 8, 9, 10, 9, 4, 9, 99, -1, 8]
+            .iter()
+            .enumerate()
+            .map(|(index, &value)| (index as u128, value as i128))
+            .collect();
         let user_input = 1;
         let current_index = 2;
         let opcode = Opcode::new(user_input, &program_memory, current_index);
 
         let expected_output = Some((0, 6));
-        let expected_program_memory = vec![3, 9, 8, 9, 10, 9, 4, 9, 99, 0, 8];
+        let expected_program_memory = [3, 9, 8, 9, 10, 9, 4, 9, 99, 0, 8]
+            .iter()
+            .enumerate()
+            .map(|(index, &value)| (index as u128, value as i128))
+            .collect();
 
         let result = opcode.execute(&mut program_memory, current_index);
 
@@ -966,13 +770,21 @@ mod tests {
 
     #[test]
     fn test_execute_terminate() {
-        let mut program_memory = vec![1, 9, 10, 3, 2, 3, 11, 0, 99, 30, 40, 50];
+        let mut program_memory = [1, 9, 10, 3, 2, 3, 11, 0, 99, 30, 40, 50]
+            .iter()
+            .enumerate()
+            .map(|(index, &value)| (index as u128, value as i128))
+            .collect();
         let user_input = 1;
         let current_index = 8;
         let opcode = Opcode::new(user_input, &program_memory, current_index);
 
         let expected_output = None;
-        let expected_program_memory = vec![1, 9, 10, 3, 2, 3, 11, 0, 99, 30, 40, 50];
+        let expected_program_memory = [1, 9, 10, 3, 2, 3, 11, 0, 99, 30, 40, 50]
+            .iter()
+            .enumerate()
+            .map(|(index, &value)| (index as u128, value as i128))
+            .collect();
 
         let result = opcode.execute(&mut program_memory, current_index);
 
@@ -981,19 +793,7 @@ mod tests {
     }
 
     #[test]
-    fn test_get_parameter_value_from_memory_position_positive() {
-        let program_memory = vec![1, 9, 10, 3, 2, 3, 11, 0, 99, 30, 40, 50];
-        let parameter = Parameter::new(0, 2);
-
-        let expected = 10;
-
-        let result = Opcode::get_parameter_value_from_memory(&parameter, &program_memory);
-
-        assert_eq!(result, expected);
-    }
-
-    #[test]
-    fn test_get_parameter_value_from_memory_new() {
+    fn test_get_parameter_value_from_memory() {
         let mut program_memory: HashMap<u128, i128> = [1, 9, 10, 3, 2, 3, 11, 0, 99, 30, 40, 50]
             .iter()
             .enumerate()
@@ -1003,31 +803,23 @@ mod tests {
 
         let expected = 10;
 
-        let result = Opcode::get_parameter_value_from_memory_new(&parameter, &mut program_memory);
-
-        assert_eq!(result, expected);
-    }
-
-    #[test]
-    fn test_get_parameter_value_from_memory_position_negative() {
-        let program_memory = vec![1, 9, 10, 3, 2, 3, 11, 0, 99, 30, 40, 50];
-        let parameter = Parameter::new(0, -2);
-
-        let expected = 40;
-
-        let result = Opcode::get_parameter_value_from_memory(&parameter, &program_memory);
+        let result = Opcode::get_parameter_value_from_memory(&parameter, &mut program_memory);
 
         assert_eq!(result, expected);
     }
 
     #[test]
     fn test_get_parameter_value_from_memory_immediate() {
-        let program_memory = vec![1, 9, 10, 3, 2, 3, 11, 0, 99, 30, 40, 50];
+        let mut program_memory = [1, 9, 10, 3, 2, 3, 11, 0, 99, 30, 40, 50]
+            .iter()
+            .enumerate()
+            .map(|(index, &value)| (index as u128, value as i128))
+            .collect();
         let parameter = Parameter::new(1, 2);
 
         let expected = 2;
 
-        let result = Opcode::get_parameter_value_from_memory(&parameter, &program_memory);
+        let result = Opcode::get_parameter_value_from_memory(&parameter, &mut program_memory);
 
         assert_eq!(result, expected);
     }

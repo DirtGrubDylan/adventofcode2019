@@ -17,7 +17,7 @@ pub fn run_day_5() {
 
                 intcode_computer.set_input(user_input);
 
-                let (_, output) = intcode_computer.execute_program_new_hash();
+                let (_, output) = intcode_computer.execute_program();
 
                 println!("System output is: {}", output.unwrap());
             }

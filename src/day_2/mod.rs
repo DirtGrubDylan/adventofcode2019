@@ -23,7 +23,7 @@ fn find_first_solution(program: &str) {
     intcode_computer.replace_code_in_program(1, 12);
     intcode_computer.replace_code_in_program(2, 2);
 
-    intcode_computer.execute_program_new_hash();
+    intcode_computer.execute_program();
 
     let first_value = intcode_computer.get_current_memory()[&0];
 
@@ -49,10 +49,9 @@ fn find_second_solution(program: &str, target: i128, largest_noun: i32, largest_
             intcode_computer.replace_code_in_program(1, noun);
             intcode_computer.replace_code_in_program(2, verb);
 
-            intcode_computer.execute_program_new_hash();
+            intcode_computer.execute_program();
 
             let output = intcode_computer.get_current_memory()[&0];
-
 
             if output == target {
                 solution = Ok(100 * noun + verb);
