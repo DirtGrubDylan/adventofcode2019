@@ -6,7 +6,7 @@ use crate::intcode_computer::{IntcodeComputer, IntcodeComputerResult};
 pub struct Amplifier {
     name: String,
     phase_setting: i32,
-    input_signal: i32,
+    input_signal: i128,
     intcode_computer: IntcodeComputer,
 }
 
@@ -14,7 +14,7 @@ impl Amplifier {
     pub fn new(
         name: &str,
         phase_setting: i32,
-        input_signal: i32,
+        input_signal: i128,
         intcode_computer: &IntcodeComputer,
     ) -> Amplifier {
         Amplifier {
@@ -25,18 +25,18 @@ impl Amplifier {
         }
     }
 
-    pub fn run_program(&mut self) -> Result<(IntcodeComputerResult, i32), String> {
+    pub fn run_program(&mut self) -> Result<(IntcodeComputerResult, i128), String> {
         self.intcode_computer.set_input(self.phase_setting);
 
-        self.intcode_computer.execute_program();
+        self.intcode_computer.execute_program_new_hash();
 
         self.continue_program()
     }
 
-    pub fn continue_program(&mut self) -> Result<(IntcodeComputerResult, i32), String> {
-        self.intcode_computer.set_input(self.input_signal);
+    pub fn continue_program(&mut self) -> Result<(IntcodeComputerResult, i128), String> {
+        self.intcode_computer.set_input(self.input_signal as i32);
 
-        let (result, output) = self.intcode_computer.execute_program();
+        let (result, output) = self.intcode_computer.execute_program_new_hash();
 
         match output {
             Some(value) => Ok((result, value)),
@@ -81,11 +81,11 @@ impl AmplifierCircuit {
     pub fn get_largest_output_signal(
         &mut self,
         phase_settings: &[i32],
-    ) -> Result<(Vec<i32>, i32), String> {
+    ) -> Result<(Vec<i32>, i128), String> {
         let number_of_amplifiers = self.amplifiers.len();
 
         let mut best_phase_settings = Vec::new();
-        let mut best_output_signal = i32::min_value();
+        let mut best_output_signal = i128::min_value();
 
         let variations = Self::get_all_phase_signal_variations(phase_settings);
 
@@ -172,7 +172,7 @@ mod tests {
     const NAMES: [&'static str; 5] = ["A", "B", "C", "D", "E"];
     const PHASE_SETTINGS: [i32; 5] = [4, 3, 2, 1, 0];
     const OTHER_PHASE_SETTINGS: [i32; 5] = [9, 8, 7, 6, 5];
-    const STARTING_INPUT_SIGNAL: i32 = 0;
+    const STARTING_INPUT_SIGNAL: i128 = 0;
     const PROGRAM: [i32; 17] = [
         3, 15, 3, 16, 1002, 16, 10, 16, 1, 16, 15, 15, 4, 15, 99, -1, -1,
     ];
