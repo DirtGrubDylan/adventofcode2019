@@ -1,11 +1,13 @@
+use std::collections::HashMap;
+
 #[derive(Debug, PartialEq)]
 pub enum Parameter {
-    Position(i32),
-    Immediate(i32),
+    Position(i128),
+    Immediate(i128),
 }
 
 impl Parameter {
-    pub fn new(mode: i32, value: i32) -> Parameter {
+    pub fn new(mode: i128, value: i128) -> Parameter {
         match mode {
             0 => Parameter::Position(value),
             1 => Parameter::Immediate(value),
@@ -36,88 +38,233 @@ impl Opcode {
 
         let opcode_value = instruction_definitions % 100;
 
+        let first_parameter_mode = ((instruction_definitions / 100) % 10) as i128;
+        let second_parameter_mode = ((instruction_definitions / 1000) % 10) as i128;
+        let third_parameter_mode = (instruction_definitions / 10000) as i128;
+
+        match opcode_value {
+            1 => {
+                let first_parameter = Parameter::new(
+                    first_parameter_mode,
+                    program_memory[current_index + 1] as i128,
+                );
+
+                let second_parameter = Parameter::new(
+                    second_parameter_mode,
+                    program_memory[current_index + 2] as i128,
+                );
+
+                let third_parameter = Parameter::new(
+                    third_parameter_mode,
+                    program_memory[current_index + 3] as i128,
+                );
+
+                Opcode::Add(first_parameter, second_parameter, third_parameter)
+            }
+            2 => {
+                let first_parameter = Parameter::new(
+                    first_parameter_mode,
+                    program_memory[current_index + 1] as i128,
+                );
+
+                let second_parameter = Parameter::new(
+                    second_parameter_mode,
+                    program_memory[current_index + 2] as i128,
+                );
+
+                let third_parameter = Parameter::new(
+                    third_parameter_mode,
+                    program_memory[current_index + 3] as i128,
+                );
+
+                Opcode::Multiply(first_parameter, second_parameter, third_parameter)
+            }
+            3 => {
+                let input_parameter = Parameter::new(1, user_input as i128);
+
+                let first_parameter = Parameter::new(
+                    first_parameter_mode,
+                    program_memory[current_index + 1] as i128,
+                );
+
+                Opcode::SaveInput(input_parameter, first_parameter)
+            }
+            4 => {
+                let first_parameter = Parameter::new(
+                    first_parameter_mode,
+                    program_memory[current_index + 1] as i128,
+                );
+
+                Opcode::Output(first_parameter)
+            }
+            5 => {
+                let first_parameter = Parameter::new(
+                    first_parameter_mode,
+                    program_memory[current_index + 1] as i128,
+                );
+
+                let second_parameter = Parameter::new(
+                    second_parameter_mode,
+                    program_memory[current_index + 2] as i128,
+                );
+
+                Opcode::JumpIfTrue(first_parameter, second_parameter)
+            }
+            6 => {
+                let first_parameter = Parameter::new(
+                    first_parameter_mode,
+                    program_memory[current_index + 1] as i128,
+                );
+
+                let second_parameter = Parameter::new(
+                    second_parameter_mode,
+                    program_memory[current_index + 2] as i128,
+                );
+
+                Opcode::JumpIfFalse(first_parameter, second_parameter)
+            }
+            7 => {
+                let first_parameter = Parameter::new(
+                    first_parameter_mode,
+                    program_memory[current_index + 1] as i128,
+                );
+
+                let second_parameter = Parameter::new(
+                    second_parameter_mode,
+                    program_memory[current_index + 2] as i128,
+                );
+
+                let third_parameter = Parameter::new(
+                    third_parameter_mode,
+                    program_memory[current_index + 3] as i128,
+                );
+
+                Opcode::StoreIfLessThan(first_parameter, second_parameter, third_parameter)
+            }
+            8 => {
+                let first_parameter = Parameter::new(
+                    first_parameter_mode,
+                    program_memory[current_index + 1] as i128,
+                );
+
+                let second_parameter = Parameter::new(
+                    second_parameter_mode,
+                    program_memory[current_index + 2] as i128,
+                );
+
+                let third_parameter = Parameter::new(
+                    third_parameter_mode,
+                    program_memory[current_index + 3] as i128,
+                );
+
+                Opcode::StoreIfEquals(first_parameter, second_parameter, third_parameter)
+            }
+            99 => Opcode::Terminate,
+            _ => panic!(
+                "Unexpected opcode given (instruction, index): {:?}",
+                (instruction_definitions, current_index)
+            ),
+        }
+    }
+
+    pub fn new_hash(
+        user_input: i32,
+        program_memory: &HashMap<u128, i128>,
+        current_index: u128,
+    ) -> Opcode {
+        let instruction_definitions = match program_memory.get(&current_index) {
+            Some(value) => value,
+            None => panic!("current_index is outside of program_memory bounds!"),
+        };
+
+        let opcode_value = instruction_definitions % 100;
+
         let first_parameter_mode = (instruction_definitions / 100) % 10;
         let second_parameter_mode = (instruction_definitions / 1000) % 10;
         let third_parameter_mode = instruction_definitions / 10000;
 
+        let plus_one_index = current_index + 1;
+        let plus_two_index = current_index + 2;
+        let plus_three_index = current_index + 3;
+
         match opcode_value {
             1 => {
                 let first_parameter =
-                    Parameter::new(first_parameter_mode, program_memory[current_index + 1]);
+                    Parameter::new(first_parameter_mode, program_memory[&plus_one_index]);
 
                 let second_parameter =
-                    Parameter::new(second_parameter_mode, program_memory[current_index + 2]);
+                    Parameter::new(second_parameter_mode, program_memory[&plus_two_index]);
 
                 let third_parameter =
-                    Parameter::new(third_parameter_mode, program_memory[current_index + 3]);
+                    Parameter::new(third_parameter_mode, program_memory[&plus_three_index]);
 
                 Opcode::Add(first_parameter, second_parameter, third_parameter)
             }
             2 => {
                 let first_parameter =
-                    Parameter::new(first_parameter_mode, program_memory[current_index + 1]);
+                    Parameter::new(first_parameter_mode, program_memory[&plus_one_index]);
 
                 let second_parameter =
-                    Parameter::new(second_parameter_mode, program_memory[current_index + 2]);
+                    Parameter::new(second_parameter_mode, program_memory[&plus_two_index]);
 
                 let third_parameter =
-                    Parameter::new(third_parameter_mode, program_memory[current_index + 3]);
+                    Parameter::new(third_parameter_mode, program_memory[&plus_three_index]);
 
                 Opcode::Multiply(first_parameter, second_parameter, third_parameter)
             }
             3 => {
-                let input_parameter = Parameter::new(1, user_input);
+                let input_parameter = Parameter::new(1, user_input as i128);
 
                 let first_parameter =
-                    Parameter::new(first_parameter_mode, program_memory[current_index + 1]);
+                    Parameter::new(first_parameter_mode, program_memory[&plus_one_index]);
 
                 Opcode::SaveInput(input_parameter, first_parameter)
             }
             4 => {
                 let first_parameter =
-                    Parameter::new(first_parameter_mode, program_memory[current_index + 1]);
+                    Parameter::new(first_parameter_mode, program_memory[&plus_one_index]);
 
                 Opcode::Output(first_parameter)
             }
             5 => {
                 let first_parameter =
-                    Parameter::new(first_parameter_mode, program_memory[current_index + 1]);
+                    Parameter::new(first_parameter_mode, program_memory[&plus_one_index]);
 
                 let second_parameter =
-                    Parameter::new(second_parameter_mode, program_memory[current_index + 2]);
+                    Parameter::new(second_parameter_mode, program_memory[&plus_two_index]);
 
                 Opcode::JumpIfTrue(first_parameter, second_parameter)
             }
             6 => {
                 let first_parameter =
-                    Parameter::new(first_parameter_mode, program_memory[current_index + 1]);
+                    Parameter::new(first_parameter_mode, program_memory[&plus_one_index]);
 
                 let second_parameter =
-                    Parameter::new(second_parameter_mode, program_memory[current_index + 2]);
+                    Parameter::new(second_parameter_mode, program_memory[&plus_two_index]);
 
                 Opcode::JumpIfFalse(first_parameter, second_parameter)
             }
             7 => {
                 let first_parameter =
-                    Parameter::new(first_parameter_mode, program_memory[current_index + 1]);
+                    Parameter::new(first_parameter_mode, program_memory[&plus_one_index]);
 
                 let second_parameter =
-                    Parameter::new(second_parameter_mode, program_memory[current_index + 2]);
+                    Parameter::new(second_parameter_mode, program_memory[&plus_two_index]);
 
                 let third_parameter =
-                    Parameter::new(third_parameter_mode, program_memory[current_index + 3]);
+                    Parameter::new(third_parameter_mode, program_memory[&plus_three_index]);
 
                 Opcode::StoreIfLessThan(first_parameter, second_parameter, third_parameter)
             }
             8 => {
                 let first_parameter =
-                    Parameter::new(first_parameter_mode, program_memory[current_index + 1]);
+                    Parameter::new(first_parameter_mode, program_memory[&plus_one_index]);
 
                 let second_parameter =
-                    Parameter::new(second_parameter_mode, program_memory[current_index + 2]);
+                    Parameter::new(second_parameter_mode, program_memory[&plus_two_index]);
 
                 let third_parameter =
-                    Parameter::new(third_parameter_mode, program_memory[current_index + 3]);
+                    Parameter::new(third_parameter_mode, program_memory[&plus_three_index]);
 
                 Opcode::StoreIfEquals(first_parameter, second_parameter, third_parameter)
             }
@@ -153,9 +300,9 @@ impl Opcode {
 
                 let sum = first_value + second_value;
 
-                program_memory[save_index] = sum;
+                program_memory[save_index as usize] = sum as i32;
 
-                Some((sum, current_index + 4))
+                Some((sum as i32, current_index + 4))
             }
             Opcode::Multiply(first_parameter, second_parameter, third_parameter) => {
                 let first_value =
@@ -173,9 +320,9 @@ impl Opcode {
 
                 let product = first_value * second_value;
 
-                program_memory[save_index] = product;
+                program_memory[save_index as usize] = product as i32;
 
-                Some((product, current_index + 4))
+                Some((product as i32, current_index + 4))
             }
             Opcode::SaveInput(input_parameter, first_parameter) => {
                 let input_value =
@@ -188,15 +335,15 @@ impl Opcode {
                     }
                 };
 
-                program_memory[save_index] = input_value;
+                program_memory[save_index as usize] = input_value as i32;
 
-                Some((input_value, current_index + 2))
+                Some((input_value as i32, current_index + 2))
             }
             Opcode::Output(first_parameter) => {
                 let output_value =
                     Self::get_parameter_value_from_memory(first_parameter, program_memory);
 
-                Some((output_value, current_index + 2))
+                Some((output_value as i32, current_index + 2))
             }
             Opcode::JumpIfTrue(first_parameter, second_parameter) => {
                 let first_value =
@@ -252,7 +399,7 @@ impl Opcode {
                     success_value = 1;
                 }
 
-                program_memory[save_index] = success_value;
+                program_memory[save_index as usize] = success_value;
 
                 Some((success_value, current_index + 4))
             }
@@ -276,7 +423,7 @@ impl Opcode {
                     success_value = 1;
                 }
 
-                program_memory[save_index] = success_value;
+                program_memory[save_index as usize] = success_value;
 
                 Some((success_value, current_index + 4))
             }
@@ -284,22 +431,207 @@ impl Opcode {
         }
     }
 
-    fn get_parameter_value_from_memory(parameter: &Parameter, program_memory: &[i32]) -> i32 {
+    // Returns values of the opcodes. None if Terminate.
+    pub fn execute_new(
+        &self,
+        program_memory: &mut HashMap<u128, i128>,
+        current_index: u128,
+    ) -> Option<(i128, u128)> {
+        match self {
+            Opcode::Add(first_parameter, second_parameter, third_parameter) => {
+                let first_value =
+                    Self::get_parameter_value_from_memory_new(first_parameter, program_memory);
+
+                let second_value =
+                    Self::get_parameter_value_from_memory_new(second_parameter, program_memory);
+
+                let save_index = match third_parameter {
+                    Parameter::Position(index) => Self::transform_index_new(*index),
+                    Parameter::Immediate(_) => {
+                        panic!("Cannot save a value with an immediate parameter!")
+                    }
+                };
+
+                let sum = first_value + second_value;
+
+                program_memory.insert(save_index, sum);
+
+                Some((sum, current_index + 4))
+            }
+            Opcode::Multiply(first_parameter, second_parameter, third_parameter) => {
+                let first_value =
+                    Self::get_parameter_value_from_memory_new(first_parameter, program_memory);
+
+                let second_value =
+                    Self::get_parameter_value_from_memory_new(second_parameter, program_memory);
+
+                let save_index = match third_parameter {
+                    Parameter::Position(index) => Self::transform_index_new(*index),
+                    Parameter::Immediate(_) => {
+                        panic!("Cannot save a value with an immediate parameter!")
+                    }
+                };
+
+                let product = first_value * second_value;
+
+                program_memory.insert(save_index, product);
+
+                Some((product, current_index + 4))
+            }
+            Opcode::SaveInput(input_parameter, first_parameter) => {
+                let input_value =
+                    Self::get_parameter_value_from_memory_new(input_parameter, program_memory);
+
+                let save_index = match first_parameter {
+                    Parameter::Position(index) => Self::transform_index_new(*index),
+                    Parameter::Immediate(_) => {
+                        panic!("Cannot save a value with an immediate parameter!")
+                    }
+                };
+
+                program_memory.insert(save_index, input_value);
+
+                Some((input_value, current_index + 2))
+            }
+            Opcode::Output(first_parameter) => {
+                let output_value =
+                    Self::get_parameter_value_from_memory_new(first_parameter, program_memory);
+
+                Some((output_value, current_index + 2))
+            }
+            Opcode::JumpIfTrue(first_parameter, second_parameter) => {
+                let first_value =
+                    Self::get_parameter_value_from_memory_new(first_parameter, program_memory);
+
+                let second_value =
+                    Self::get_parameter_value_from_memory_new(second_parameter, program_memory);
+
+                if second_value < 0 {
+                    panic!(
+                        "JumpIfTrue second value {} cannot be negative!",
+                        second_value
+                    );
+                }
+
+                let mut success_value = 0;
+                let mut next_index = current_index + 3;
+
+                if first_value != 0 {
+                    success_value = 1;
+                    next_index = second_value as u128;
+                }
+
+                Some((success_value, next_index))
+            }
+            Opcode::JumpIfFalse(first_parameter, second_parameter) => {
+                let first_value =
+                    Self::get_parameter_value_from_memory_new(first_parameter, program_memory);
+
+                let second_value =
+                    Self::get_parameter_value_from_memory_new(second_parameter, program_memory);
+
+                if second_value < 0 {
+                    panic!(
+                        "JumpIfFalse second value {} cannot be negative!",
+                        second_value
+                    );
+                }
+
+                let mut success_value = 0;
+                let mut next_index = current_index + 3;
+
+                if first_value == 0 {
+                    success_value = 1;
+                    next_index = second_value as u128;
+                }
+
+                Some((success_value, next_index))
+            }
+            Opcode::StoreIfLessThan(first_parameter, second_parameter, third_parameter) => {
+                let first_value =
+                    Self::get_parameter_value_from_memory_new(first_parameter, program_memory);
+
+                let second_value =
+                    Self::get_parameter_value_from_memory_new(second_parameter, program_memory);
+
+                let save_index = match third_parameter {
+                    Parameter::Position(index) => Self::transform_index_new(*index),
+                    Parameter::Immediate(_) => {
+                        panic!("Cannot save a value with an immediate parameter!")
+                    }
+                };
+
+                let mut success_value = 0;
+
+                if first_value < second_value {
+                    success_value = 1;
+                }
+
+                program_memory.insert(save_index, success_value);
+
+                Some((success_value, current_index + 4))
+            }
+            Opcode::StoreIfEquals(first_parameter, second_parameter, third_parameter) => {
+                let first_value =
+                    Self::get_parameter_value_from_memory_new(first_parameter, program_memory);
+
+                let second_value =
+                    Self::get_parameter_value_from_memory_new(second_parameter, program_memory);
+
+                let save_index = match third_parameter {
+                    Parameter::Position(index) => Self::transform_index_new(*index),
+                    Parameter::Immediate(_) => {
+                        panic!("Cannot save a value with an immediate parameter!")
+                    }
+                };
+
+                let mut success_value = 0;
+
+                if first_value == second_value {
+                    success_value = 1;
+                }
+
+                program_memory.insert(save_index, success_value);
+
+                Some((success_value, current_index + 4))
+            }
+            Opcode::Terminate => None,
+        }
+    }
+
+    fn get_parameter_value_from_memory(parameter: &Parameter, program_memory: &[i32]) -> i128 {
         match parameter {
             Parameter::Position(index) => {
-                program_memory[Self::transform_index(*index, program_memory)]
+                program_memory[Self::transform_index(*index, program_memory) as usize] as i128
+            }
+            Parameter::Immediate(value) => *value,
+        }
+    }
+
+    fn get_parameter_value_from_memory_new(
+        parameter: &Parameter,
+        program_memory: &mut HashMap<u128, i128>,
+    ) -> i128 {
+        match parameter {
+            Parameter::Position(index) => {
+                *program_memory.entry(*index as u128).or_insert(0)
             }
             Parameter::Immediate(value) => *value,
         }
     }
 
     // Transforms a negative index to wrap
-    fn transform_index(index: i32, program_memory: &[i32]) -> usize {
+    fn transform_index(index: i128, program_memory: &[i32]) -> u128 {
         if index < 0 {
-            ((program_memory.len() as i32) + index) as usize
+            ((program_memory.len() as i128) + index) as u128
         } else {
-            index as usize
+            index as u128
         }
+    }
+
+    // Transforms a negative index to wrap
+    fn transform_index_new(index: i128) -> u128 {
+        index as u128
     }
 }
 
@@ -656,6 +988,22 @@ mod tests {
         let expected = 10;
 
         let result = Opcode::get_parameter_value_from_memory(&parameter, &program_memory);
+
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_get_parameter_value_from_memory_new() {
+        let mut program_memory: HashMap<u128, i128> = [1, 9, 10, 3, 2, 3, 11, 0, 99, 30, 40, 50]
+            .iter()
+            .enumerate()
+            .map(|(index, &value)| (index as u128, value as i128))
+            .collect();
+        let parameter = Parameter::new(0, 2);
+
+        let expected = 10;
+
+        let result = Opcode::get_parameter_value_from_memory_new(&parameter, &mut program_memory);
 
         assert_eq!(result, expected);
     }
