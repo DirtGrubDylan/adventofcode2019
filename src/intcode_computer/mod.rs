@@ -105,37 +105,21 @@ impl IntcodeComputer {
 
 impl From<&[i128]> for IntcodeComputer {
     fn from(a: &[i128]) -> IntcodeComputer {
-        let temp_hash_map: HashMap<u128, i128> = a
-            .iter()
-            .enumerate()
-            .map(|(index, &value)| (index as u128, value))
-            .collect();
-
         IntcodeComputer {
-            current_program: temp_hash_map.clone(),
+            current_program: slice_to_hashmap(a),
             current_index: 0,
             current_input: None,
             current_status: IntcodeComputerStatus::NotStarted,
-            original_program: temp_hash_map.clone(),
+            original_program: slice_to_hashmap(a),
         }
     }
 }
 
 impl From<&[i32]> for IntcodeComputer {
     fn from(a: &[i32]) -> IntcodeComputer {
-        let temp_hash_map: HashMap<u128, i128> = a
-            .iter()
-            .enumerate()
-            .map(|(index, &value)| (index as u128, value as i128))
-            .collect();
+        let temp: Vec<i128> = a.iter().map(|x| *x as i128).collect();
 
-        IntcodeComputer {
-            current_program: temp_hash_map.clone(),
-            current_index: 0,
-            current_input: None,
-            current_status: IntcodeComputerStatus::NotStarted,
-            original_program: temp_hash_map.clone(),
-        }
+        IntcodeComputer::new(temp.as_slice())
     }
 }
 
@@ -147,10 +131,29 @@ impl From<&[String]> for IntcodeComputer {
     }
 }
 
+pub fn slice_to_hashmap<N>(slice: &[N]) -> HashMap<u128, i128>
+where
+    N: Into<i128> + Copy,
+{
+    slice
+        .iter()
+        .enumerate()
+        .map(|(index, &value)| (index as u128, value.into()))
+        .collect()
+}
+
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::file_reader::to_string_vector;
+
+    // new and replace: [1, 2, 3];
+    // execute op1: [1, 1, 1, 4, 0, 5, 6, 0, 2, 4, 4, 13, 99, 0] idx 0
+    // execute op2: " idx 8
+    // execute till waiting: [3, 15, 3, 16, 1002, 16, 10, 16, 1, 16, 15, 15, 4, 15, 99, 0, 0]
+    //fi: 566, si: 10
+    // expected till : [3, 15, 3, 16, 1002, 16, 10, 16, 1, 16, 15, 15, 4, 15, 99, 666, 10]
 
     #[test]
     fn test_new() {
@@ -179,24 +182,6 @@ mod tests {
         let values = vec![String::from("1"), String::from("2"), String::from("3")];
 
         let expected = IntcodeComputer::new(vec![1, 2, 3].as_slice());
-
-        let result = IntcodeComputer::new(values.as_slice());
-
-        assert_eq!(result, expected);
-    }
-
-    #[test]
-    fn test_new_from_file() {
-        let values: Vec<String> = to_string_vector("test_inputs/day_2_part_1.txt")
-            .unwrap()
-            .get(0)
-            .unwrap()
-            .split(",")
-            .map(|s| String::from(s))
-            .collect();
-
-        let expected =
-            IntcodeComputer::new(vec![1, 9, 10, 3, 2, 3, 11, 0, 99, 30, 40, 50].as_slice());
 
         let result = IntcodeComputer::new(values.as_slice());
 
@@ -254,33 +239,6 @@ mod tests {
     }
 
     #[test]
-    fn test_run_program_from_file() {
-        let values: Vec<String> = to_string_vector("test_inputs/day_2_part_1.txt")
-            .unwrap()
-            .get(0)
-            .unwrap()
-            .split(",")
-            .map(|s| String::from(s))
-            .collect();
-        let user_input = 0;
-
-        let mut intcode_computer = IntcodeComputer::new(values.as_slice());
-
-        intcode_computer.set_input(user_input);
-        intcode_computer.execute_program();
-
-        let expected: HashMap<u128, i128> = [3500, 9, 10, 70, 2, 3, 11, 0, 99, 30, 40, 50]
-            .iter()
-            .enumerate()
-            .map(|(index, &value)| (index as u128, value as i128))
-            .collect();
-
-        let result = intcode_computer.current_program;
-
-        assert_eq!(result, expected);
-    }
-
-    #[test]
     fn test_execute_program_until_waiting() {
         let program = vec![
             3, 15, 3, 16, 1002, 16, 10, 16, 1, 16, 15, 15, 4, 15, 99, 0, 0,
@@ -315,23 +273,23 @@ mod tests {
         let first_input = 666;
 
         let expected_current_program = vec![
-            3,
-            15,
-            3,
-            16,
-            1002,
-            16,
-            10,
-            16,
-            1,
-            16,
-            15,
-            15,
-            4,
-            15,
-            99,
-            first_input,
-            0,
+            3,           //0
+            15,          //1
+            3,           //2
+            16,          //3
+            1002,        //4
+            16,          //5
+            10,          //6
+            16,          //7
+            1,           //8
+            16,          //9
+            15,          //10
+            15,          //11
+            4,           //12
+            15,          //13
+            99,          //14
+            first_input, //15
+            0,           //16
         ];
         let expected_hash_map: HashMap<u128, i128> = expected_current_program
             .iter()
