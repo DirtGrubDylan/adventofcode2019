@@ -1,7 +1,5 @@
 use std::collections::HashMap;
 
-use super::slice_to_hashmap;
-
 #[derive(Debug, PartialEq)]
 pub enum Parameter {
     Position(i128),
@@ -332,6 +330,8 @@ impl Opcode {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    use crate::intcode_computer::slice_to_hashmap;
 
     #[test]
     fn test_new_add() {
