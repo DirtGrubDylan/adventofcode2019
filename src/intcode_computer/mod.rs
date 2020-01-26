@@ -289,8 +289,8 @@ mod tests {
         let second_input = 10;
 
         let mut expected_current_program = PROGRAM.to_vec();
-        expected_current_program[15]= 756;
-        expected_current_program[16]= 100;
+        expected_current_program[15] = 756;
+        expected_current_program[16] = 100;
         let expected_computer = IntcodeComputer {
             current_program: slice_to_hashmap(&expected_current_program),
             current_index: 14,

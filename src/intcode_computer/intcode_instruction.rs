@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use super::slice_to_hashmap;
+
 #[derive(Debug, PartialEq)]
 pub enum Parameter {
     Position(i128),
@@ -333,11 +335,7 @@ mod tests {
 
     #[test]
     fn test_new_add() {
-        let program_memory = [1, 9, 10, 3, 2, 3, 11, 0, 99, 30, 40, 50]
-            .iter()
-            .enumerate()
-            .map(|(index, &value)| (index as u128, value as i128))
-            .collect();
+        let program_memory = slice_to_hashmap(&[1, 9, 10, 3, 2, 3, 11, 0, 99, 30, 40, 50]);
         let user_input = 1;
         let current_index = 0;
 
@@ -354,11 +352,7 @@ mod tests {
 
     #[test]
     fn test_new_multiply() {
-        let program_memory = [1002, 4, 3, 4, 33]
-            .iter()
-            .enumerate()
-            .map(|(index, &value)| (index as u128, value as i128))
-            .collect();
+        let program_memory = slice_to_hashmap(&[1002, 4, 3, 4, 33]);
         let user_input = 1;
         let current_index = 0;
 
@@ -375,11 +369,7 @@ mod tests {
 
     #[test]
     fn test_new_save_input() {
-        let program_memory = [3, 0, 4, 0, 99]
-            .iter()
-            .enumerate()
-            .map(|(index, &value)| (index as u128, value as i128))
-            .collect();
+        let program_memory = slice_to_hashmap(&[3, 0, 4, 0, 99]);
         let user_input = 1;
         let current_index = 0;
 
@@ -392,11 +382,7 @@ mod tests {
 
     #[test]
     fn test_new_output() {
-        let program_memory = [3, 0, 4, 0, 99]
-            .iter()
-            .enumerate()
-            .map(|(index, &value)| (index as u128, value as i128))
-            .collect();
+        let program_memory = slice_to_hashmap(&[3, 0, 4, 0, 99]);
         let user_input = 1;
         let current_index = 2;
 
@@ -409,11 +395,7 @@ mod tests {
 
     #[test]
     fn test_new_jump_if_true() {
-        let program_memory = [5, 4, 5, 4, -1, 99]
-            .iter()
-            .enumerate()
-            .map(|(index, &value)| (index as u128, value as i128))
-            .collect();
+        let program_memory = slice_to_hashmap(&[5, 4, 5, 4, -1, 99]);
         let user_input = 1;
         let current_index = 0;
 
@@ -426,11 +408,7 @@ mod tests {
 
     #[test]
     fn test_new_jump_if_false() {
-        let program_memory = [106, 4, 5, 4, -1, 99]
-            .iter()
-            .enumerate()
-            .map(|(index, &value)| (index as u128, value as i128))
-            .collect();
+        let program_memory = slice_to_hashmap(&[106, 4, 5, 4, -1, 99]);
         let user_input = 1;
         let current_index = 0;
 
@@ -443,11 +421,7 @@ mod tests {
 
     #[test]
     fn test_new_store_if_less_than() {
-        let program_memory = [3, 9, 7, 9, 10, 9, 4, 9, 99, -1, 8]
-            .iter()
-            .enumerate()
-            .map(|(index, &value)| (index as u128, value as i128))
-            .collect();
+        let program_memory = slice_to_hashmap(&[3, 9, 7, 9, 10, 9, 4, 9, 99, -1, 8]);
         let user_input = 1;
         let current_index = 2;
 
@@ -464,11 +438,7 @@ mod tests {
 
     #[test]
     fn test_new_store_if_equals() {
-        let program_memory = [3, 3, 1108, -1, 8, 3, 4, 3, 99]
-            .iter()
-            .enumerate()
-            .map(|(index, &value)| (index as u128, value as i128))
-            .collect();
+        let program_memory = slice_to_hashmap(&[3, 3, 1108, -1, 8, 3, 4, 3, 99]);
         let user_input = 1;
         let current_index = 2;
 
@@ -485,11 +455,7 @@ mod tests {
 
     #[test]
     fn test_new_terminate() {
-        let program_memory = [1, 9, 10, 3, 2, 3, 11, 0, 99, 30, 40, 50]
-            .iter()
-            .enumerate()
-            .map(|(index, &value)| (index as u128, value as i128))
-            .collect();
+        let program_memory = slice_to_hashmap(&[1, 9, 10, 3, 2, 3, 11, 0, 99, 30, 40, 50]);
         let user_input = 1;
         let current_index = 8;
 
@@ -502,21 +468,14 @@ mod tests {
 
     #[test]
     fn test_execute_add() {
-        let mut program_memory = [1, 9, 10, 3, 2, 3, 11, 0, 99, 30, 40, 50]
-            .iter()
-            .enumerate()
-            .map(|(index, &value)| (index as u128, value as i128))
-            .collect();
+        let mut program_memory = slice_to_hashmap(&[1, 9, 10, 3, 2, 3, 11, 0, 99, 30, 40, 50]);
         let user_input = 1;
         let current_index = 0;
         let opcode = Opcode::new(user_input, &program_memory, current_index);
 
         let expected_output = Some((70, 4));
-        let expected_program_memory = [1, 9, 10, 70, 2, 3, 11, 0, 99, 30, 40, 50]
-            .iter()
-            .enumerate()
-            .map(|(index, &value)| (index as u128, value as i128))
-            .collect();
+        let expected_program_memory =
+            slice_to_hashmap(&[1, 9, 10, 70, 2, 3, 11, 0, 99, 30, 40, 50]);
 
         let result = opcode.execute(&mut program_memory, current_index);
 
@@ -526,21 +485,13 @@ mod tests {
 
     #[test]
     fn test_execute_multiply() {
-        let mut program_memory = [1002, 4, 3, 4, 33]
-            .iter()
-            .enumerate()
-            .map(|(index, &value)| (index as u128, value as i128))
-            .collect();
+        let mut program_memory = slice_to_hashmap(&[1002, 4, 3, 4, 33]);
         let user_input = 1;
         let current_index = 0;
         let opcode = Opcode::new(user_input, &program_memory, current_index);
 
         let expected_output = Some((99, 4));
-        let expected_program_memory = [1002, 4, 3, 4, 99]
-            .iter()
-            .enumerate()
-            .map(|(index, &value)| (index as u128, value as i128))
-            .collect();
+        let expected_program_memory = slice_to_hashmap(&[1002, 4, 3, 4, 99]);
 
         let result = opcode.execute(&mut program_memory, current_index);
 
@@ -550,21 +501,13 @@ mod tests {
 
     #[test]
     fn test_execute_save_input() {
-        let mut program_memory = [3, 0, 4, 0, 99]
-            .iter()
-            .enumerate()
-            .map(|(index, &value)| (index as u128, value as i128))
-            .collect();
+        let mut program_memory = slice_to_hashmap(&[3, 0, 4, 0, 99]);
         let user_input = 1;
         let current_index = 0;
         let opcode = Opcode::new(user_input, &program_memory, current_index);
 
         let expected_output = Some((1, 2));
-        let expected_program_memory = [1, 0, 4, 0, 99]
-            .iter()
-            .enumerate()
-            .map(|(index, &value)| (index as u128, value as i128))
-            .collect();
+        let expected_program_memory = slice_to_hashmap(&[1, 0, 4, 0, 99]);
 
         let result = opcode.execute(&mut program_memory, current_index);
 
@@ -574,21 +517,13 @@ mod tests {
 
     #[test]
     fn test_execute_output() {
-        let mut program_memory = [3, 0, 4, 0, 99]
-            .iter()
-            .enumerate()
-            .map(|(index, &value)| (index as u128, value as i128))
-            .collect();
+        let mut program_memory = slice_to_hashmap(&[3, 0, 4, 0, 99]);
         let user_input = 1;
         let current_index = 2;
         let opcode = Opcode::new(user_input, &program_memory, current_index);
 
         let expected_output = Some((3, 4));
-        let expected_program_memory = [3, 0, 4, 0, 99]
-            .iter()
-            .enumerate()
-            .map(|(index, &value)| (index as u128, value as i128))
-            .collect();
+        let expected_program_memory = slice_to_hashmap(&[3, 0, 4, 0, 99]);
 
         let result = opcode.execute(&mut program_memory, current_index);
 
@@ -598,11 +533,8 @@ mod tests {
 
     #[test]
     fn test_execute_jump_if_true() {
-        let mut program_memory = [3, 3, 1105, 1, 9, 1101, 0, 0, 12, 4, 12, 99, 1]
-            .iter()
-            .enumerate()
-            .map(|(index, &value)| (index as u128, value as i128))
-            .collect();
+        let mut program_memory =
+            slice_to_hashmap(&[3, 3, 1105, 1, 9, 1101, 0, 0, 12, 4, 12, 99, 1]);
         let user_input = 1;
         let current_index = 2;
         let opcode = Opcode::new(user_input, &program_memory, current_index);
@@ -618,11 +550,7 @@ mod tests {
 
     #[test]
     fn test_execute_no_jump_if_true() {
-        let mut program_memory = [3, 3, 5, 6, 9, 1101, 0, 0, 12, 4, 12, 99, 1]
-            .iter()
-            .enumerate()
-            .map(|(index, &value)| (index as u128, value as i128))
-            .collect();
+        let mut program_memory = slice_to_hashmap(&[3, 3, 5, 6, 9, 1101, 0, 0, 12, 4, 12, 99, 1]);
         let user_input = 1;
         let current_index = 2;
         let opcode = Opcode::new(user_input, &program_memory, current_index);
@@ -638,11 +566,8 @@ mod tests {
 
     #[test]
     fn test_execute_jump_if_false() {
-        let mut program_memory = [3, 3, 1106, 0, 9, 1101, 0, 0, 12, 4, 12, 99, 1]
-            .iter()
-            .enumerate()
-            .map(|(index, &value)| (index as u128, value as i128))
-            .collect();
+        let mut program_memory =
+            slice_to_hashmap(&[3, 3, 1106, 0, 9, 1101, 0, 0, 12, 4, 12, 99, 1]);
         let user_input = 1;
         let current_index = 2;
         let opcode = Opcode::new(user_input, &program_memory, current_index);
@@ -658,11 +583,7 @@ mod tests {
 
     #[test]
     fn test_execute_no_jump_if_false() {
-        let mut program_memory = [3, 3, 6, 6, 9, 1101, 1, 0, 12, 4, 12, 99, 1]
-            .iter()
-            .enumerate()
-            .map(|(index, &value)| (index as u128, value as i128))
-            .collect();
+        let mut program_memory = slice_to_hashmap(&[3, 3, 6, 6, 9, 1101, 1, 0, 12, 4, 12, 99, 1]);
         let user_input = 1;
         let current_index = 2;
         let opcode = Opcode::new(user_input, &program_memory, current_index);
@@ -678,21 +599,13 @@ mod tests {
 
     #[test]
     fn test_execute_store_if_less_than() {
-        let mut program_memory = [3, 3, 1107, 7, 8, 3, 4, 3, 99]
-            .iter()
-            .enumerate()
-            .map(|(index, &value)| (index as u128, value as i128))
-            .collect();
+        let mut program_memory = slice_to_hashmap(&[3, 3, 1107, 7, 8, 3, 4, 3, 99]);
         let user_input = 1;
         let current_index = 2;
         let opcode = Opcode::new(user_input, &program_memory, current_index);
 
         let expected_output = Some((1, 6));
-        let expected_program_memory = [3, 3, 1107, 1, 8, 3, 4, 3, 99]
-            .iter()
-            .enumerate()
-            .map(|(index, &value)| (index as u128, value as i128))
-            .collect();
+        let expected_program_memory = slice_to_hashmap(&[3, 3, 1107, 1, 8, 3, 4, 3, 99]);
 
         let result = opcode.execute(&mut program_memory, current_index);
 
@@ -702,21 +615,13 @@ mod tests {
 
     #[test]
     fn test_execute_no_store_if_less_than() {
-        let mut program_memory = [3, 9, 7, 9, 10, 9, 4, 9, 99, 8, 8]
-            .iter()
-            .enumerate()
-            .map(|(index, &value)| (index as u128, value as i128))
-            .collect();
+        let mut program_memory = slice_to_hashmap(&[3, 9, 7, 9, 10, 9, 4, 9, 99, 8, 8]);
         let user_input = 1;
         let current_index = 2;
         let opcode = Opcode::new(user_input, &program_memory, current_index);
 
         let expected_output = Some((0, 6));
-        let expected_program_memory = [3, 9, 7, 9, 10, 9, 4, 9, 99, 0, 8]
-            .iter()
-            .enumerate()
-            .map(|(index, &value)| (index as u128, value as i128))
-            .collect();
+        let expected_program_memory = slice_to_hashmap(&[3, 9, 7, 9, 10, 9, 4, 9, 99, 0, 8]);
 
         let result = opcode.execute(&mut program_memory, current_index);
 
@@ -726,21 +631,13 @@ mod tests {
 
     #[test]
     fn test_execute_store_if_equals() {
-        let mut program_memory = [3, 3, 1108, 8, 8, 3, 4, 3, 99]
-            .iter()
-            .enumerate()
-            .map(|(index, &value)| (index as u128, value as i128))
-            .collect();
+        let mut program_memory = slice_to_hashmap(&[3, 3, 1108, 8, 8, 3, 4, 3, 99]);
         let user_input = 1;
         let current_index = 2;
         let opcode = Opcode::new(user_input, &program_memory, current_index);
 
         let expected_output = Some((1, 6));
-        let expected_program_memory = [3, 3, 1108, 1, 8, 3, 4, 3, 99]
-            .iter()
-            .enumerate()
-            .map(|(index, &value)| (index as u128, value as i128))
-            .collect();
+        let expected_program_memory = slice_to_hashmap(&[3, 3, 1108, 1, 8, 3, 4, 3, 99]);
 
         let result = opcode.execute(&mut program_memory, current_index);
 
@@ -750,21 +647,13 @@ mod tests {
 
     #[test]
     fn test_execute_no_store_if_equals() {
-        let mut program_memory = [3, 9, 8, 9, 10, 9, 4, 9, 99, -1, 8]
-            .iter()
-            .enumerate()
-            .map(|(index, &value)| (index as u128, value as i128))
-            .collect();
+        let mut program_memory = slice_to_hashmap(&[3, 9, 8, 9, 10, 9, 4, 9, 99, -1, 8]);
         let user_input = 1;
         let current_index = 2;
         let opcode = Opcode::new(user_input, &program_memory, current_index);
 
         let expected_output = Some((0, 6));
-        let expected_program_memory = [3, 9, 8, 9, 10, 9, 4, 9, 99, 0, 8]
-            .iter()
-            .enumerate()
-            .map(|(index, &value)| (index as u128, value as i128))
-            .collect();
+        let expected_program_memory = slice_to_hashmap(&[3, 9, 8, 9, 10, 9, 4, 9, 99, 0, 8]);
 
         let result = opcode.execute(&mut program_memory, current_index);
 
@@ -774,21 +663,13 @@ mod tests {
 
     #[test]
     fn test_execute_terminate() {
-        let mut program_memory = [1, 9, 10, 3, 2, 3, 11, 0, 99, 30, 40, 50]
-            .iter()
-            .enumerate()
-            .map(|(index, &value)| (index as u128, value as i128))
-            .collect();
+        let mut program_memory = slice_to_hashmap(&[1, 9, 10, 3, 2, 3, 11, 0, 99, 30, 40, 50]);
         let user_input = 1;
         let current_index = 8;
         let opcode = Opcode::new(user_input, &program_memory, current_index);
 
         let expected_output = None;
-        let expected_program_memory = [1, 9, 10, 3, 2, 3, 11, 0, 99, 30, 40, 50]
-            .iter()
-            .enumerate()
-            .map(|(index, &value)| (index as u128, value as i128))
-            .collect();
+        let expected_program_memory = slice_to_hashmap(&[1, 9, 10, 3, 2, 3, 11, 0, 99, 30, 40, 50]);
 
         let result = opcode.execute(&mut program_memory, current_index);
 
@@ -798,11 +679,7 @@ mod tests {
 
     #[test]
     fn test_get_parameter_value_from_memory() {
-        let mut program_memory: HashMap<u128, i128> = [1, 9, 10, 3, 2, 3, 11, 0, 99, 30, 40, 50]
-            .iter()
-            .enumerate()
-            .map(|(index, &value)| (index as u128, value as i128))
-            .collect();
+        let mut program_memory = slice_to_hashmap(&[1, 9, 10, 3, 2, 3, 11, 0, 99, 30, 40, 50]);
         let parameter = Parameter::new(0, 2);
 
         let expected = 10;
@@ -814,11 +691,7 @@ mod tests {
 
     #[test]
     fn test_get_parameter_value_from_memory_immediate() {
-        let mut program_memory = [1, 9, 10, 3, 2, 3, 11, 0, 99, 30, 40, 50]
-            .iter()
-            .enumerate()
-            .map(|(index, &value)| (index as u128, value as i128))
-            .collect();
+        let mut program_memory = slice_to_hashmap(&[1, 9, 10, 3, 2, 3, 11, 0, 99, 30, 40, 50]);
         let parameter = Parameter::new(1, 2);
 
         let expected = 2;
