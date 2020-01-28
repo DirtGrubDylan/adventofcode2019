@@ -4,6 +4,7 @@ use std::collections::HashMap;
 pub enum Parameter {
     Position(i128),
     Immediate(i128),
+    Relative(i128),
 }
 
 impl Parameter {
@@ -11,6 +12,7 @@ impl Parameter {
         match mode {
             0 => Parameter::Position(value),
             1 => Parameter::Immediate(value),
+            2 => Parameter::Relative(value),
             _ => panic!("Unexpected parameter_mode!"),
         }
     }
@@ -26,6 +28,7 @@ pub enum Opcode {
     JumpIfFalse(Parameter, Parameter),
     StoreIfLessThan(Parameter, Parameter, Parameter),
     StoreIfEquals(Parameter, Parameter, Parameter),
+    AdjustRelativeBase(Parameter),
     Terminate,
 }
 
@@ -131,6 +134,12 @@ impl Opcode {
 
                 Opcode::StoreIfEquals(first_parameter, second_parameter, third_parameter)
             }
+            9 => {
+                let first_parameter =
+                    Parameter::new(first_parameter_mode, program_memory[&plus_one_index]);
+
+                Opcode::AdjustRelativeBase(first_parameter)
+            }
             99 => Opcode::Terminate,
             _ => panic!(
                 "Unexpected opcode given (instruction, index): {:?}",
@@ -144,21 +153,23 @@ impl Opcode {
         &self,
         program_memory: &mut HashMap<u128, i128>,
         current_index: u128,
+        base_index: u128,
     ) -> Option<(i128, u128)> {
         match self {
             Opcode::Add(first_parameter, second_parameter, third_parameter) => {
-                let first_value =
-                    Self::get_parameter_value_from_memory(first_parameter, program_memory);
+                let first_value = Self::get_parameter_value_from_memory(
+                    first_parameter,
+                    program_memory,
+                    base_index,
+                );
 
-                let second_value =
-                    Self::get_parameter_value_from_memory(second_parameter, program_memory);
+                let second_value = Self::get_parameter_value_from_memory(
+                    second_parameter,
+                    program_memory,
+                    base_index,
+                );
 
-                let save_index = match third_parameter {
-                    Parameter::Position(index) => Self::transform_index(*index),
-                    Parameter::Immediate(_) => {
-                        panic!("Cannot save a value with an immediate parameter!")
-                    }
-                };
+                let save_index = Self::get_save_index(third_parameter, base_index);
 
                 let sum = first_value + second_value;
 
@@ -167,18 +178,19 @@ impl Opcode {
                 Some((sum, current_index + 4))
             }
             Opcode::Multiply(first_parameter, second_parameter, third_parameter) => {
-                let first_value =
-                    Self::get_parameter_value_from_memory(first_parameter, program_memory);
+                let first_value = Self::get_parameter_value_from_memory(
+                    first_parameter,
+                    program_memory,
+                    base_index,
+                );
 
-                let second_value =
-                    Self::get_parameter_value_from_memory(second_parameter, program_memory);
+                let second_value = Self::get_parameter_value_from_memory(
+                    second_parameter,
+                    program_memory,
+                    base_index,
+                );
 
-                let save_index = match third_parameter {
-                    Parameter::Position(index) => Self::transform_index(*index),
-                    Parameter::Immediate(_) => {
-                        panic!("Cannot save a value with an immediate parameter!")
-                    }
-                };
+                let save_index = Self::get_save_index(third_parameter, base_index);
 
                 let product = first_value * second_value;
 
@@ -187,32 +199,39 @@ impl Opcode {
                 Some((product, current_index + 4))
             }
             Opcode::SaveInput(input_parameter, first_parameter) => {
-                let input_value =
-                    Self::get_parameter_value_from_memory(input_parameter, program_memory);
+                let input_value = Self::get_parameter_value_from_memory(
+                    input_parameter,
+                    program_memory,
+                    base_index,
+                );
 
-                let save_index = match first_parameter {
-                    Parameter::Position(index) => Self::transform_index(*index),
-                    Parameter::Immediate(_) => {
-                        panic!("Cannot save a value with an immediate parameter!")
-                    }
-                };
+                let save_index = Self::get_save_index(first_parameter, base_index);
 
                 program_memory.insert(save_index, input_value);
 
                 Some((input_value, current_index + 2))
             }
             Opcode::Output(first_parameter) => {
-                let output_value =
-                    Self::get_parameter_value_from_memory(first_parameter, program_memory);
+                let output_value = Self::get_parameter_value_from_memory(
+                    first_parameter,
+                    program_memory,
+                    base_index,
+                );
 
                 Some((output_value, current_index + 2))
             }
             Opcode::JumpIfTrue(first_parameter, second_parameter) => {
-                let first_value =
-                    Self::get_parameter_value_from_memory(first_parameter, program_memory);
+                let first_value = Self::get_parameter_value_from_memory(
+                    first_parameter,
+                    program_memory,
+                    base_index,
+                );
 
-                let second_value =
-                    Self::get_parameter_value_from_memory(second_parameter, program_memory);
+                let second_value = Self::get_parameter_value_from_memory(
+                    second_parameter,
+                    program_memory,
+                    base_index,
+                );
 
                 if second_value.is_negative() {
                     panic!(
@@ -232,11 +251,17 @@ impl Opcode {
                 Some((success_value, next_index))
             }
             Opcode::JumpIfFalse(first_parameter, second_parameter) => {
-                let first_value =
-                    Self::get_parameter_value_from_memory(first_parameter, program_memory);
+                let first_value = Self::get_parameter_value_from_memory(
+                    first_parameter,
+                    program_memory,
+                    base_index,
+                );
 
-                let second_value =
-                    Self::get_parameter_value_from_memory(second_parameter, program_memory);
+                let second_value = Self::get_parameter_value_from_memory(
+                    second_parameter,
+                    program_memory,
+                    base_index,
+                );
 
                 if second_value.is_negative() {
                     panic!(
@@ -256,18 +281,19 @@ impl Opcode {
                 Some((success_value, next_index))
             }
             Opcode::StoreIfLessThan(first_parameter, second_parameter, third_parameter) => {
-                let first_value =
-                    Self::get_parameter_value_from_memory(first_parameter, program_memory);
+                let first_value = Self::get_parameter_value_from_memory(
+                    first_parameter,
+                    program_memory,
+                    base_index,
+                );
 
-                let second_value =
-                    Self::get_parameter_value_from_memory(second_parameter, program_memory);
+                let second_value = Self::get_parameter_value_from_memory(
+                    second_parameter,
+                    program_memory,
+                    base_index,
+                );
 
-                let save_index = match third_parameter {
-                    Parameter::Position(index) => Self::transform_index(*index),
-                    Parameter::Immediate(_) => {
-                        panic!("Cannot save a value with an immediate parameter!")
-                    }
-                };
+                let save_index = Self::get_save_index(third_parameter, base_index);
 
                 let mut success_value = 0;
 
@@ -280,18 +306,19 @@ impl Opcode {
                 Some((success_value, current_index + 4))
             }
             Opcode::StoreIfEquals(first_parameter, second_parameter, third_parameter) => {
-                let first_value =
-                    Self::get_parameter_value_from_memory(first_parameter, program_memory);
+                let first_value = Self::get_parameter_value_from_memory(
+                    first_parameter,
+                    program_memory,
+                    base_index,
+                );
 
-                let second_value =
-                    Self::get_parameter_value_from_memory(second_parameter, program_memory);
+                let second_value = Self::get_parameter_value_from_memory(
+                    second_parameter,
+                    program_memory,
+                    base_index,
+                );
 
-                let save_index = match third_parameter {
-                    Parameter::Position(index) => Self::transform_index(*index),
-                    Parameter::Immediate(_) => {
-                        panic!("Cannot save a value with an immediate parameter!")
-                    }
-                };
+                let save_index = Self::get_save_index(third_parameter, base_index);
 
                 let mut success_value = 0;
 
@@ -303,6 +330,17 @@ impl Opcode {
 
                 Some((success_value, current_index + 4))
             }
+            Opcode::AdjustRelativeBase(first_parameter) => {
+                let first_value = Self::get_parameter_value_from_memory(
+                    first_parameter,
+                    program_memory,
+                    base_index,
+                );
+
+                let next_base_index = (base_index as i128) + first_value;
+
+                Some((next_base_index, current_index + 2))
+            }
             Opcode::Terminate => None,
         }
     }
@@ -310,10 +348,24 @@ impl Opcode {
     fn get_parameter_value_from_memory(
         parameter: &Parameter,
         program_memory: &mut HashMap<u128, i128>,
+        base_index: u128,
     ) -> i128 {
         match parameter {
-            Parameter::Position(index) => *program_memory.entry(*index as u128).or_insert(0),
+            Parameter::Position(index) => *program_memory
+                .entry(Self::transform_index(*index))
+                .or_insert(0),
+            Parameter::Relative(index) => *program_memory
+                .entry(Self::transform_index(*index + (base_index as i128)))
+                .or_insert(0),
             Parameter::Immediate(value) => *value,
+        }
+    }
+
+    fn get_save_index(parameter: &Parameter, base_index: u128) -> u128 {
+        match parameter {
+            Parameter::Position(index) => Self::transform_index(*index),
+            Parameter::Relative(index) => Self::transform_index(*index + (base_index as i128)),
+            Parameter::Immediate(_) => panic!("Cannot save a value with an immediate parameter!"),
         }
     }
 
@@ -470,6 +522,7 @@ mod tests {
     fn test_execute_add() {
         let mut program_memory = slice_to_hashmap(&[1, 9, 10, 3, 2, 3, 11, 0, 99, 30, 40, 50]);
         let user_input = 1;
+        let base_index = 0;
         let current_index = 0;
         let opcode = Opcode::new(user_input, &program_memory, current_index);
 
@@ -477,7 +530,7 @@ mod tests {
         let expected_program_memory =
             slice_to_hashmap(&[1, 9, 10, 70, 2, 3, 11, 0, 99, 30, 40, 50]);
 
-        let result = opcode.execute(&mut program_memory, current_index);
+        let result = opcode.execute(&mut program_memory, current_index, base_index);
 
         assert_eq!(result, expected_output);
         assert_eq!(program_memory, expected_program_memory);
@@ -487,13 +540,14 @@ mod tests {
     fn test_execute_multiply() {
         let mut program_memory = slice_to_hashmap(&[1002, 4, 3, 4, 33]);
         let user_input = 1;
+        let base_index = 0;
         let current_index = 0;
         let opcode = Opcode::new(user_input, &program_memory, current_index);
 
         let expected_output = Some((99, 4));
         let expected_program_memory = slice_to_hashmap(&[1002, 4, 3, 4, 99]);
 
-        let result = opcode.execute(&mut program_memory, current_index);
+        let result = opcode.execute(&mut program_memory, current_index, base_index);
 
         assert_eq!(result, expected_output);
         assert_eq!(program_memory, expected_program_memory);
@@ -503,13 +557,14 @@ mod tests {
     fn test_execute_save_input() {
         let mut program_memory = slice_to_hashmap(&[3, 0, 4, 0, 99]);
         let user_input = 1;
+        let base_index = 0;
         let current_index = 0;
         let opcode = Opcode::new(user_input, &program_memory, current_index);
 
         let expected_output = Some((1, 2));
         let expected_program_memory = slice_to_hashmap(&[1, 0, 4, 0, 99]);
 
-        let result = opcode.execute(&mut program_memory, current_index);
+        let result = opcode.execute(&mut program_memory, current_index, base_index);
 
         assert_eq!(result, expected_output);
         assert_eq!(program_memory, expected_program_memory);
@@ -519,13 +574,14 @@ mod tests {
     fn test_execute_output() {
         let mut program_memory = slice_to_hashmap(&[3, 0, 4, 0, 99]);
         let user_input = 1;
+        let base_index = 0;
         let current_index = 2;
         let opcode = Opcode::new(user_input, &program_memory, current_index);
 
         let expected_output = Some((3, 4));
         let expected_program_memory = slice_to_hashmap(&[3, 0, 4, 0, 99]);
 
-        let result = opcode.execute(&mut program_memory, current_index);
+        let result = opcode.execute(&mut program_memory, current_index, base_index);
 
         assert_eq!(result, expected_output);
         assert_eq!(program_memory, expected_program_memory);
@@ -536,13 +592,14 @@ mod tests {
         let mut program_memory =
             slice_to_hashmap(&[3, 3, 1105, 1, 9, 1101, 0, 0, 12, 4, 12, 99, 1]);
         let user_input = 1;
+        let base_index = 0;
         let current_index = 2;
         let opcode = Opcode::new(user_input, &program_memory, current_index);
 
         let expected_output = Some((1, 9));
         let expected_program_memory = program_memory.clone();
 
-        let result = opcode.execute(&mut program_memory, current_index);
+        let result = opcode.execute(&mut program_memory, current_index, base_index);
 
         assert_eq!(result, expected_output);
         assert_eq!(program_memory, expected_program_memory);
@@ -552,13 +609,14 @@ mod tests {
     fn test_execute_no_jump_if_true() {
         let mut program_memory = slice_to_hashmap(&[3, 3, 5, 6, 9, 1101, 0, 0, 12, 4, 12, 99, 1]);
         let user_input = 1;
+        let base_index = 0;
         let current_index = 2;
         let opcode = Opcode::new(user_input, &program_memory, current_index);
 
         let expected_output = Some((0, 5));
         let expected_program_memory = program_memory.clone();
 
-        let result = opcode.execute(&mut program_memory, current_index);
+        let result = opcode.execute(&mut program_memory, current_index, base_index);
 
         assert_eq!(result, expected_output);
         assert_eq!(program_memory, expected_program_memory);
@@ -569,13 +627,14 @@ mod tests {
         let mut program_memory =
             slice_to_hashmap(&[3, 3, 1106, 0, 9, 1101, 0, 0, 12, 4, 12, 99, 1]);
         let user_input = 1;
+        let base_index = 0;
         let current_index = 2;
         let opcode = Opcode::new(user_input, &program_memory, current_index);
 
         let expected_output = Some((1, 9));
         let expected_program_memory = program_memory.clone();
 
-        let result = opcode.execute(&mut program_memory, current_index);
+        let result = opcode.execute(&mut program_memory, current_index, base_index);
 
         assert_eq!(result, expected_output);
         assert_eq!(program_memory, expected_program_memory);
@@ -585,13 +644,14 @@ mod tests {
     fn test_execute_no_jump_if_false() {
         let mut program_memory = slice_to_hashmap(&[3, 3, 6, 6, 9, 1101, 1, 0, 12, 4, 12, 99, 1]);
         let user_input = 1;
+        let base_index = 0;
         let current_index = 2;
         let opcode = Opcode::new(user_input, &program_memory, current_index);
 
         let expected_output = Some((0, 5));
         let expected_program_memory = program_memory.clone();
 
-        let result = opcode.execute(&mut program_memory, current_index);
+        let result = opcode.execute(&mut program_memory, current_index, base_index);
 
         assert_eq!(result, expected_output);
         assert_eq!(program_memory, expected_program_memory);
@@ -601,13 +661,14 @@ mod tests {
     fn test_execute_store_if_less_than() {
         let mut program_memory = slice_to_hashmap(&[3, 3, 1107, 7, 8, 3, 4, 3, 99]);
         let user_input = 1;
+        let base_index = 0;
         let current_index = 2;
         let opcode = Opcode::new(user_input, &program_memory, current_index);
 
         let expected_output = Some((1, 6));
         let expected_program_memory = slice_to_hashmap(&[3, 3, 1107, 1, 8, 3, 4, 3, 99]);
 
-        let result = opcode.execute(&mut program_memory, current_index);
+        let result = opcode.execute(&mut program_memory, current_index, base_index);
 
         assert_eq!(result, expected_output);
         assert_eq!(program_memory, expected_program_memory);
@@ -617,13 +678,14 @@ mod tests {
     fn test_execute_no_store_if_less_than() {
         let mut program_memory = slice_to_hashmap(&[3, 9, 7, 9, 10, 9, 4, 9, 99, 8, 8]);
         let user_input = 1;
+        let base_index = 0;
         let current_index = 2;
         let opcode = Opcode::new(user_input, &program_memory, current_index);
 
         let expected_output = Some((0, 6));
         let expected_program_memory = slice_to_hashmap(&[3, 9, 7, 9, 10, 9, 4, 9, 99, 0, 8]);
 
-        let result = opcode.execute(&mut program_memory, current_index);
+        let result = opcode.execute(&mut program_memory, current_index, base_index);
 
         assert_eq!(result, expected_output);
         assert_eq!(program_memory, expected_program_memory);
@@ -633,13 +695,14 @@ mod tests {
     fn test_execute_store_if_equals() {
         let mut program_memory = slice_to_hashmap(&[3, 3, 1108, 8, 8, 3, 4, 3, 99]);
         let user_input = 1;
+        let base_index = 0;
         let current_index = 2;
         let opcode = Opcode::new(user_input, &program_memory, current_index);
 
         let expected_output = Some((1, 6));
         let expected_program_memory = slice_to_hashmap(&[3, 3, 1108, 1, 8, 3, 4, 3, 99]);
 
-        let result = opcode.execute(&mut program_memory, current_index);
+        let result = opcode.execute(&mut program_memory, current_index, base_index);
 
         assert_eq!(result, expected_output);
         assert_eq!(program_memory, expected_program_memory);
@@ -649,29 +712,61 @@ mod tests {
     fn test_execute_no_store_if_equals() {
         let mut program_memory = slice_to_hashmap(&[3, 9, 8, 9, 10, 9, 4, 9, 99, -1, 8]);
         let user_input = 1;
+        let base_index = 0;
         let current_index = 2;
         let opcode = Opcode::new(user_input, &program_memory, current_index);
 
         let expected_output = Some((0, 6));
         let expected_program_memory = slice_to_hashmap(&[3, 9, 8, 9, 10, 9, 4, 9, 99, 0, 8]);
 
-        let result = opcode.execute(&mut program_memory, current_index);
+        let result = opcode.execute(&mut program_memory, current_index, base_index);
 
         assert_eq!(result, expected_output);
         assert_eq!(program_memory, expected_program_memory);
     }
 
     #[test]
+    fn test_adjust_relative_base() {
+        let mut program_memory = slice_to_hashmap(&[109, 19]);
+        let user_input = 0;
+        let base_index = 2000;
+        let current_index = 0;
+        let opcode = Opcode::new(user_input, &program_memory, current_index);
+
+        let expected_output = Some((2019, 2));
+
+        let result = opcode.execute(&mut program_memory, current_index, base_index);
+
+        assert_eq!(result, expected_output);
+    }
+
+    #[test]
+    fn test_adjust_relative_base_negative() {
+        let mut program_memory = slice_to_hashmap(&[109, -9]);
+        let user_input = 0;
+        let base_index = 2000;
+        let current_index = 0;
+        let opcode = Opcode::new(user_input, &program_memory, current_index);
+
+        let expected_output = Some((1991, 2));
+
+        let result = opcode.execute(&mut program_memory, current_index, base_index);
+
+        assert_eq!(result, expected_output);
+    }
+
+    #[test]
     fn test_execute_terminate() {
         let mut program_memory = slice_to_hashmap(&[1, 9, 10, 3, 2, 3, 11, 0, 99, 30, 40, 50]);
         let user_input = 1;
+        let base_index = 0;
         let current_index = 8;
         let opcode = Opcode::new(user_input, &program_memory, current_index);
 
         let expected_output = None;
         let expected_program_memory = slice_to_hashmap(&[1, 9, 10, 3, 2, 3, 11, 0, 99, 30, 40, 50]);
 
-        let result = opcode.execute(&mut program_memory, current_index);
+        let result = opcode.execute(&mut program_memory, current_index, base_index);
 
         assert_eq!(result, expected_output);
         assert_eq!(program_memory, expected_program_memory);
@@ -680,11 +775,13 @@ mod tests {
     #[test]
     fn test_get_parameter_value_from_memory() {
         let mut program_memory = slice_to_hashmap(&[1, 9, 10, 3, 2, 3, 11, 0, 99, 30, 40, 50]);
+        let base_index = 0;
         let parameter = Parameter::new(0, 2);
 
         let expected = 10;
 
-        let result = Opcode::get_parameter_value_from_memory(&parameter, &mut program_memory);
+        let result =
+            Opcode::get_parameter_value_from_memory(&parameter, &mut program_memory, base_index);
 
         assert_eq!(result, expected);
     }
@@ -692,11 +789,13 @@ mod tests {
     #[test]
     fn test_get_parameter_value_from_memory_immediate() {
         let mut program_memory = slice_to_hashmap(&[1, 9, 10, 3, 2, 3, 11, 0, 99, 30, 40, 50]);
+        let base_index = 0;
         let parameter = Parameter::new(1, 2);
 
         let expected = 2;
 
-        let result = Opcode::get_parameter_value_from_memory(&parameter, &mut program_memory);
+        let result =
+            Opcode::get_parameter_value_from_memory(&parameter, &mut program_memory, base_index);
 
         assert_eq!(result, expected);
     }

@@ -17,6 +17,7 @@ pub struct IntcodeComputer {
     current_input: Option<i128>,
     current_status: IntcodeComputerStatus,
     current_base_index: u128,
+    outputs: Vec<i128>,
     original_program: HashMap<u128, i128>,
 }
 
@@ -44,9 +45,11 @@ impl IntcodeComputer {
             }
         }
 
-        while let Some((opcode_execution_result, next_index)) =
-            opcode.execute(&mut self.current_program, self.current_index)
-        {
+        while let Some((opcode_execution_result, next_index)) = opcode.execute(
+            &mut self.current_program,
+            self.current_index,
+            self.current_base_index,
+        ) {
             let next_opcode = Opcode::new(
                 self.current_input.unwrap_or(0),
                 &self.current_program,
@@ -54,10 +57,18 @@ impl IntcodeComputer {
             );
             self.current_index = next_index;
 
-            if let Opcode::Output(_) = opcode {
-                output = Some(opcode_execution_result as i128);
-            } else if let Opcode::SaveInput(_, _) = opcode {
-                self.current_input = None;
+            match opcode {
+                Opcode::Output(_) => {
+                    self.outputs.push(opcode_execution_result);
+                    output = Some(opcode_execution_result);
+                }
+                Opcode::SaveInput(_, _) => {
+                    self.current_input = None;
+                }
+                Opcode::AdjustRelativeBase(_) => {
+                    self.current_base_index = opcode_execution_result as u128;
+                }
+                _ => {}
             }
 
             if let Opcode::SaveInput(_, _) = next_opcode {
@@ -93,6 +104,8 @@ impl IntcodeComputer {
         self.current_index = 0;
         self.current_input = None;
         self.current_status = IntcodeComputerStatus::NotStarted;
+        self.current_base_index = 0;
+        self.outputs = Vec::new();
     }
 
     pub fn get_current_memory(&self) -> HashMap<u128, i128> {
@@ -101,6 +114,10 @@ impl IntcodeComputer {
 
     pub fn get_status(&self) -> IntcodeComputerStatus {
         self.current_status.clone()
+    }
+
+    pub fn get_latest_output(&self) -> Option<i128> {
+        self.outputs.last().map(|&x| x)
     }
 }
 
@@ -112,6 +129,7 @@ impl From<&[i128]> for IntcodeComputer {
             current_input: None,
             current_status: IntcodeComputerStatus::NotStarted,
             current_base_index: 0,
+            outputs: Vec::new(),
             original_program: slice_to_hashmap(a),
         }
     }
@@ -156,6 +174,9 @@ mod tests {
     const PROGRAM: [i128; 17] = [
         3, 15, 3, 16, 1002, 16, 10, 16, 1, 16, 15, 15, 4, 15, 99, 566, 10,
     ];
+    const SELF_REPLICATING_PROGRAM: [i128; 16] = [
+        109, 1, 204, -1, 1001, 100, 1, 100, 1008, 100, 16, 101, 1006, 101, 0, 99,
+    ];
 
     #[test]
     fn test_new() {
@@ -165,6 +186,7 @@ mod tests {
             current_input: None,
             current_status: IntcodeComputerStatus::NotStarted,
             current_base_index: 0,
+            outputs: Vec::new(),
             original_program: slice_to_hashmap(&PROGRAM),
         };
 
@@ -235,6 +257,18 @@ mod tests {
     }
 
     #[test]
+    fn test_run_large_opcode_2() {
+        let mut intcode_computer =
+            IntcodeComputer::new(vec![1102, 34915192, 34915192, 7, 4, 7, 99, 0].as_slice());
+
+        let expected_outputs = vec![1_219_070_632_396_864];
+
+        intcode_computer.execute_program();
+
+        assert_eq!(intcode_computer.outputs, expected_outputs);
+    }
+
+    #[test]
     fn test_execute_program_until_waiting() {
         let mut intcode_computer = IntcodeComputer::new(PROGRAM.to_vec().as_slice());
 
@@ -264,6 +298,7 @@ mod tests {
             current_input: None,
             current_status: IntcodeComputerStatus::WaitingForInput,
             current_base_index: 0,
+            outputs: Vec::new(),
             original_program: slice_to_hashmap(&PROGRAM.to_vec()),
         };
 
@@ -297,6 +332,7 @@ mod tests {
             current_input: None,
             current_status: IntcodeComputerStatus::Finished,
             current_base_index: 0,
+            outputs: vec![756],
             original_program: slice_to_hashmap(&PROGRAM.to_vec()),
         };
         let expected_result = Some(756);
@@ -314,6 +350,30 @@ mod tests {
 
         assert_eq!(intcode_computer, expected_computer);
         assert_eq!(result, expected_result);
+    }
+
+    #[test]
+    fn test_execute_self_replicating_program() {
+        let mut intcode_computer =
+            IntcodeComputer::new(SELF_REPLICATING_PROGRAM.to_vec().as_slice());
+
+        intcode_computer.execute_program();
+
+        assert_eq!(intcode_computer.outputs, SELF_REPLICATING_PROGRAM.to_vec());
+    }
+
+    #[test]
+    fn test_large_number_output() {
+        let program: Vec<i128> = vec![104, 1125899906842624, 99];
+        let mut intcode_computer = IntcodeComputer::new(program.as_slice());
+
+        let expected_outputs = vec![1125899906842624];
+        let expected_return = Some(1125899906842624);
+
+        let result = intcode_computer.execute_program();
+
+        assert_eq!(intcode_computer.outputs, expected_outputs);
+        assert_eq!(result, expected_return);
     }
 
     #[test]
