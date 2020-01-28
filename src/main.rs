@@ -1,3 +1,5 @@
+use std::io::{self, Write};
+
 pub mod file_reader;
 pub mod intcode_computer;
 
@@ -15,7 +17,7 @@ fn print_seperator() {
     println!("-------------------------------");
 }
 
-fn run_day(day: usize) {
+fn run_day(day: i128) {
     match day {
         1 => day_1::run_day_1(),
         2 => day_2::run_day_2(),
@@ -26,14 +28,35 @@ fn run_day(day: usize) {
         7 => day_7::run_day_7(),
         8 => day_8::run_day_8(),
         9 => day_9::run_day_9(),
-        _ => (),
+        _ => unimplemented!("I haven't done that day yet :("),
     }
+}
+
+pub fn get_user_input() -> i128 {
+    let mut input_buffer = String::new();
+
+    io::stdout().flush().expect("Could not flush stdout!");
+
+    io::stdin()
+        .read_line(&mut input_buffer)
+        .expect("Failed to read user input!");
+
+    input_buffer
+        .trim()
+        .parse::<i128>()
+        .expect("Failed to parse user_input!")
 }
 
 fn main() {
     print_seperator();
 
-    run_day(9);
+    print!("Please choose a day to run (1-25): ");
+
+    let input = get_user_input();
+
+    print_seperator();
+
+    run_day(input);
 
     print_seperator();
 }

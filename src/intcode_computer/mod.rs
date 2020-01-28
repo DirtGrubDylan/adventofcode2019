@@ -119,6 +119,10 @@ impl IntcodeComputer {
     pub fn get_latest_output(&self) -> Option<i128> {
         self.outputs.last().map(|&x| x)
     }
+
+    pub fn get_outputs(&self) -> Vec<i128> {
+        self.outputs.clone()
+    }
 }
 
 impl From<&[i128]> for IntcodeComputer {
