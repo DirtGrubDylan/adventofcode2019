@@ -14,7 +14,7 @@ impl Asteroid {
         }
     }
 
-    pub fn create_from_map(x_location: i32, y_location: i32, map_data: &[Vec<char>]) -> Asteroid {
+    fn create_from_map(x_location: i32, y_location: i32, map_data: &[Vec<char>]) -> Asteroid {
         let temp_asteroid = Asteroid::new(x_location, y_location, 0);
 
         let number_of_asteroids_in_los = temp_asteroid.number_of_asteroids_in_los(map_data);
@@ -74,12 +74,6 @@ impl Asteroid {
         let (relative_x, relative_y) = self.relative_coordinates_of(other);
 
         relative_x.abs() + relative_y.abs()
-    }
-
-    fn distance_to(&self, other: &Asteroid) -> f64 {
-        let (relative_x, relative_y) = self.relative_coordinates_of(other);
-
-        ((relative_x.pow(2) + relative_y.pow(2)) as f64).sqrt()
     }
 
     fn on_same_los(&self, first: &Asteroid, second: &Asteroid) -> bool {
@@ -246,18 +240,6 @@ mod tests {
         let expected = 6;
 
         let result = first_asteroid.manhattan_distance_to(&second_asteroid);
-
-        assert_eq!(result, expected);
-    }
-
-    #[test]
-    pub fn test_distance_to() {
-        let first_asteroid = TEST_DATA_ASTEROIDS[9].clone();
-        let second_asteroid = TEST_DATA_ASTEROIDS[0].clone();
-
-        let expected = 5.0;
-
-        let result = first_asteroid.distance_to(&second_asteroid);
 
         assert_eq!(result, expected);
     }
