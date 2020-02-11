@@ -82,6 +82,32 @@ impl Asteroid {
         ((relative_x.pow(2) + relative_y.pow(2)) as f64).sqrt()
     }
 
+    // Returns the angle from self to other.
+    // The angle is based on unit circle:
+    //     (0, -1) -> 0 deg
+    //     (1, 0) -> -90 deg
+    //     (0, 1) -> -180 deg
+    //     (-1, 0) -> -270 deg
+    fn angle_to(&self, other: &Asteroid) -> f64 {
+        let (relative_x, relative_y) = self.relative_coordinates_of(other);
+
+        let (relative_x, relative_y) = (relative_x as f64, -relative_y as f64);
+
+        println!("rx, ry: {}, {}", relative_x, relative_y);
+
+        let mut angle_to = relative_y.atan2(relative_x).to_degrees() - 90.0;
+
+        if angle_to > 0.0 {
+            angle_to -= 360.0;
+        }
+
+        if angle_to >= 360.0 {
+            angle_to += 360.0;
+        }
+
+        angle_to
+    }
+
     fn on_same_los(&self, first: &Asteroid, second: &Asteroid) -> bool {
         let first_relative_end_point = self.relative_coordinates_of(first);
         let second_relative_end_point = self.relative_coordinates_of(second);
@@ -103,6 +129,10 @@ impl Asteroid {
             other.x_location - self.x_location,
             other.y_location - self.y_location,
         )
+    }
+
+    fn relative_polar_coordinates_of(&self, other: &Asteroid) -> (f64, f64) {
+        (self.distance_to(other), self.angle_to(other))
     }
 }
 
@@ -159,6 +189,8 @@ impl AsteroidMap {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    const EPSILON: f64 = 1e-10;
 
     const TEST_DATA: [[char; 5]; 5] = [
         ['.', '#', '.', '.', '#'],
@@ -259,7 +291,59 @@ mod tests {
 
         let result = first_asteroid.distance_to(&second_asteroid);
 
-        assert_eq!(result, expected);
+        assert!(result - expected < EPSILON);
+    }
+
+    #[test]
+    fn test_angle_to_90_degrees() {
+        let asteroid_0 = TEST_DATA_ASTEROIDS[0].clone();
+        let asteroid_1 = TEST_DATA_ASTEROIDS[1].clone();
+        let asteroid_4 = TEST_DATA_ASTEROIDS[4].clone();
+        let asteroid_5 = TEST_DATA_ASTEROIDS[5].clone();
+        let asteroid_8 = TEST_DATA_ASTEROIDS[8].clone();
+        let asteroid_9 = TEST_DATA_ASTEROIDS[9].clone();
+
+        let expected_0 = 0.0;
+        let result_0 = asteroid_8.angle_to(&asteroid_5);
+
+        let expected_1 = -14.036243468;
+        let result_1 = asteroid_8.angle_to(&asteroid_1);
+
+        let expected_2 = -90.0;
+        let result_2 = asteroid_8.angle_to(&asteroid_9);
+
+        let expected_3 = -180.0;
+        let result_3 = asteroid_5.angle_to(&asteroid_8);
+
+        let expected_4 = -270.0;
+        let result_4 = asteroid_5.angle_to(&asteroid_4);
+
+        let expected_5 = -315.0;
+        let result_5 = asteroid_5.angle_to(&asteroid_0);
+
+        let expected_6 = -333.434948823;
+        let result_6 = asteroid_8.angle_to(&asteroid_4);
+
+        let expected_7 = -333.434948823;
+        let result_7 = asteroid_8.angle_to(&asteroid_0);
+
+        println!("Result 0: {}", result_0);
+        println!("Result 1: {}", result_1);
+        println!("Result 2: {}", result_2);
+        println!("Result 3: {}", result_3);
+        println!("Result 4: {}", result_4);
+        println!("Result 5: {}", result_5);
+        println!("Result 6: {}", result_6);
+        println!("Result 7: {}", result_7);
+
+        assert!(result_0 - expected_0 < EPSILON);
+        assert!(result_1 - expected_1 < EPSILON);
+        assert!(result_2 - expected_2 < EPSILON);
+        assert!(result_3 - expected_3 < EPSILON);
+        assert!(result_4 - expected_4 < EPSILON);
+        assert!(result_5 - expected_5 < EPSILON);
+        assert!(result_6 - expected_6 < EPSILON);
+        assert!(result_7 - expected_7 < EPSILON);
     }
 
     #[test]
