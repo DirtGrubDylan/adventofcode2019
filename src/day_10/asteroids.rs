@@ -14,7 +14,7 @@ impl Asteroid {
         }
     }
 
-    pub fn create_from_map(x_location: i32, y_location: i32, map_data: &[Vec<char>]) -> Asteroid {
+    fn create_from_map(x_location: i32, y_location: i32, map_data: &[Vec<char>]) -> Asteroid {
         let temp_asteroid = Asteroid::new(x_location, y_location, 0);
 
         let number_of_asteroids_in_los = temp_asteroid.number_of_asteroids_in_los(map_data);
