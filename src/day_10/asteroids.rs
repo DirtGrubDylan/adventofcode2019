@@ -1,8 +1,11 @@
+const EPSILON: f64 = 1e-10;
+
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub struct Asteroid {
     pub x_location: i32,
     pub y_location: i32,
     pub number_of_asteroids_in_los: i32,
+    pub other_asteroids_grouped_by_relative_polar_coords: Vec<Vec<Asteroid>>,
 }
 
 impl Asteroid {
@@ -11,23 +14,29 @@ impl Asteroid {
             x_location,
             y_location,
             number_of_asteroids_in_los,
+            other_asteroids_grouped_by_relative_polar_coords: Vec::new(),
         }
     }
 
     fn create_from_map(x_location: i32, y_location: i32, map_data: &[Vec<char>]) -> Asteroid {
         let temp_asteroid = Asteroid::new(x_location, y_location, 0);
 
-        let number_of_asteroids_in_los = temp_asteroid.number_of_asteroids_in_los(map_data);
+        let other_asteroids_grouped_by_relative_polar_coords =
+            temp_asteroid.number_of_asteroids_in_los(map_data);
+
+        let number_of_asteroids_in_los =
+            other_asteroids_grouped_by_relative_polar_coords.len() as i32;
 
         Asteroid {
             x_location,
             y_location,
             number_of_asteroids_in_los,
+            other_asteroids_grouped_by_relative_polar_coords,
         }
     }
 
-    fn number_of_asteroids_in_los(&self, map_data: &[Vec<char>]) -> i32 {
-        let mut number_of_asteroids_in_los = 0;
+    fn number_of_asteroids_in_los(&self, map_data: &[Vec<char>]) -> Vec<Vec<Asteroid>> {
+        let mut groups_by_relative_polar_coords: Vec<Vec<Asteroid>> = Vec::new();
 
         let mut other_asteroids: Vec<Asteroid> = self
             .get_all_other_asteroid_coordinates(map_data)
@@ -35,18 +44,37 @@ impl Asteroid {
             .map(|&(x, y)| Asteroid::new(x, y, 0))
             .collect();
 
-        other_asteroids.sort_by_key(|asteroid| self.manhattan_distance_to(asteroid));
+        other_asteroids.sort_by(|a, b| {
+            let (r1, t1) = self.relative_polar_coordinates_of(&a);
+            let (r2, t2) = self.relative_polar_coordinates_of(&b);
 
-        while !other_asteroids.is_empty() {
-            let first_asteroid = other_asteroids[0].clone();
+            (-t1)
+                .partial_cmp(&(-t2))
+                .unwrap()
+                .then(r1.partial_cmp(&r2).unwrap())
+        });
 
-            number_of_asteroids_in_los += 1;
+        let (_, mut t1) = self.relative_polar_coordinates_of(&other_asteroids[0]);
+        let mut current_group: Vec<Asteroid> = vec![other_asteroids[0].clone()];
 
-            other_asteroids
-                .retain(|second_asteroid| !self.on_same_los(&first_asteroid, second_asteroid));
+        for other_asteroid in other_asteroids.iter().skip(1) {
+            let (_, t2) = self.relative_polar_coordinates_of(&other_asteroid);
+
+            if (t1 - t2).abs() < EPSILON {
+                current_group.push(other_asteroid.clone());
+            } else {
+                groups_by_relative_polar_coords.push(current_group);
+
+                t1 = t2;
+                current_group = vec![other_asteroid.clone()];
+            }
         }
 
-        number_of_asteroids_in_los
+        if !current_group.is_empty() {
+            groups_by_relative_polar_coords.push(current_group);
+        }
+
+        groups_by_relative_polar_coords
     }
 
     fn get_all_other_asteroid_coordinates(&self, map_data: &[Vec<char>]) -> Vec<(i32, i32)> {
@@ -70,12 +98,6 @@ impl Asteroid {
         other_asteroid_coordinates
     }
 
-    fn manhattan_distance_to(&self, other: &Asteroid) -> i32 {
-        let (relative_x, relative_y) = self.relative_coordinates_of(other);
-
-        relative_x.abs() + relative_y.abs()
-    }
-
     fn distance_to(&self, other: &Asteroid) -> f64 {
         let (relative_x, relative_y) = self.relative_coordinates_of(other);
 
@@ -93,8 +115,6 @@ impl Asteroid {
 
         let (relative_x, relative_y) = (relative_x as f64, -relative_y as f64);
 
-        println!("rx, ry: {}, {}", relative_x, relative_y);
-
         let mut angle_to = relative_y.atan2(relative_x).to_degrees() - 90.0;
 
         if angle_to > 0.0 {
@@ -106,22 +126,6 @@ impl Asteroid {
         }
 
         angle_to
-    }
-
-    fn on_same_los(&self, first: &Asteroid, second: &Asteroid) -> bool {
-        let first_relative_end_point = self.relative_coordinates_of(first);
-        let second_relative_end_point = self.relative_coordinates_of(second);
-
-        let cross_product = first_relative_end_point.0 * second_relative_end_point.1
-            - first_relative_end_point.1 * second_relative_end_point.0;
-
-        let x_values_have_same_signum =
-            first_relative_end_point.0.signum() == second_relative_end_point.0.signum();
-
-        let y_values_have_same_signum =
-            first_relative_end_point.1.signum() == second_relative_end_point.1.signum();
-
-        cross_product == 0 && x_values_have_same_signum && y_values_have_same_signum
     }
 
     fn relative_coordinates_of(&self, other: &Asteroid) -> (i32, i32) {
@@ -168,6 +172,47 @@ impl AsteroidMap {
             .clone()
     }
 
+    pub fn nth_vaporized_asteroid_from_best_monitoring_station(
+        &self,
+        n: usize,
+    ) -> Option<Asteroid> {
+        let mut vaporized_count = 0;
+        let mut current_vaporized_asteroid = None;
+
+        let best_monitoring_station = self.best_monitoring_station_location();
+
+        let mut asteroid_groups =
+            best_monitoring_station.other_asteroids_grouped_by_relative_polar_coords;
+        let number_of_groups = asteroid_groups.len();
+        let mut group_index = 0;
+        let max_index = asteroid_groups
+            .iter()
+            .max_by_key(|v| v.len())
+            .unwrap()
+            .len()
+            * asteroid_groups.len();
+
+        while (vaporized_count < n) && (group_index < max_index) {
+            let asteroid_group = asteroid_groups
+                .get_mut(group_index % number_of_groups)
+                .unwrap();
+
+            if !asteroid_group.is_empty() {
+                vaporized_count += 1;
+
+                current_vaporized_asteroid = Some(asteroid_group.remove(0));
+
+                if vaporized_count != n {
+                    current_vaporized_asteroid = None;
+                }
+            }
+
+            group_index += 1;
+        }
+
+        current_vaporized_asteroid
+    }
+
     fn get_asteroid_coordinates(map_data: &[Vec<char>]) -> Vec<(i32, i32)> {
         let mut other_asteroid_coordinates = Vec::new();
 
@@ -189,8 +234,6 @@ impl AsteroidMap {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    const EPSILON: f64 = 1e-10;
 
     const TEST_DATA: [[char; 5]; 5] = [
         ['.', '#', '.', '.', '#'],
@@ -225,13 +268,98 @@ mod tests {
         ['.', '#', '.', '.', '.', '.', '#', '#', '#', '#'],
     ];
 
+    const LARGEST_TEST_DATA: [[char; 20]; 20] = [
+        [
+            '.', '#', '.', '.', '#', '#', '.', '#', '#', '#', '.', '.', '.', '#', '#', '#', '#',
+            '#', '#', '#',
+        ],
+        [
+            '#', '#', '.', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '.', '.',
+            '#', '#', '.',
+        ],
+        [
+            '.', '#', '.', '#', '#', '#', '#', '#', '#', '.', '#', '#', '#', '#', '#', '#', '#',
+            '#', '.', '#',
+        ],
+        [
+            '.', '#', '#', '#', '.', '#', '#', '#', '#', '#', '#', '#', '.', '#', '#', '#', '#',
+            '.', '#', '.',
+        ],
+        [
+            '#', '#', '#', '#', '#', '.', '#', '#', '.', '#', '.', '#', '#', '.', '#', '#', '#',
+            '.', '#', '#',
+        ],
+        [
+            '.', '.', '#', '#', '#', '#', '#', '.', '.', '#', '.', '#', '#', '#', '#', '#', '#',
+            '#', '#', '#',
+        ],
+        [
+            '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#',
+            '#', '#', '#',
+        ],
+        [
+            '#', '.', '#', '#', '#', '#', '.', '.', '.', '.', '#', '#', '#', '.', '#', '.', '#',
+            '.', '#', '#',
+        ],
+        [
+            '#', '#', '.', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#',
+            '#', '#', '#',
+        ],
+        [
+            '#', '#', '#', '#', '#', '.', '#', '#', '.', '#', '#', '#', '.', '.', '#', '#', '#',
+            '#', '.', '.',
+        ],
+        [
+            '.', '.', '#', '#', '#', '#', '#', '#', '.', '.', '#', '#', '.', '#', '#', '#', '#',
+            '#', '#', '#',
+        ],
+        [
+            '#', '#', '#', '#', '.', '#', '#', '.', '#', '#', '#', '#', '.', '.', '.', '#', '#',
+            '.', '.', '#',
+        ],
+        [
+            '.', '#', '#', '#', '#', '#', '.', '.', '#', '.', '#', '#', '#', '#', '#', '#', '.',
+            '#', '#', '#',
+        ],
+        [
+            '#', '#', '.', '.', '.', '#', '.', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#',
+            '.', '.', '.',
+        ],
+        [
+            '#', '.', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '.', '#', '#', '#', '#',
+            '#', '#', '#',
+        ],
+        [
+            '.', '#', '#', '#', '#', '.', '#', '.', '#', '#', '#', '.', '#', '#', '#', '.', '#',
+            '.', '#', '#',
+        ],
+        [
+            '.', '.', '.', '.', '#', '#', '.', '#', '#', '.', '#', '#', '#', '.', '.', '#', '#',
+            '#', '#', '#',
+        ],
+        [
+            '.', '#', '.', '#', '.', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '.',
+            '#', '#', '#',
+        ],
+        [
+            '#', '.', '#', '.', '#', '.', '#', '#', '#', '#', '#', '.', '#', '#', '#', '#', '.',
+            '#', '#', '#',
+        ],
+        [
+            '#', '#', '#', '.', '#', '#', '.', '#', '#', '#', '#', '.', '#', '#', '.', '#', '.',
+            '.', '#', '#',
+        ],
+    ];
+
     #[test]
     pub fn test_create_from_map() {
         let test_data: Vec<Vec<char>> = TEST_DATA.iter().map(|arr| arr.to_vec()).collect();
 
         let expected = TEST_DATA_ASTEROIDS[0].clone();
 
-        let result = Asteroid::create_from_map(1, 0, test_data.as_slice());
+        let mut result = Asteroid::create_from_map(1, 0, test_data.as_slice());
+
+        result.other_asteroids_grouped_by_relative_polar_coords = Vec::new();
 
         assert_eq!(result, expected);
     }
@@ -243,7 +371,7 @@ mod tests {
 
         let expected = 5;
 
-        let result = asteroid.number_of_asteroids_in_los(&test_data);
+        let result = asteroid.number_of_asteroids_in_los(&test_data).len();
 
         assert_eq!(result, expected);
     }
@@ -266,18 +394,6 @@ mod tests {
         ];
 
         let result = asteroid.get_all_other_asteroid_coordinates(&test_data);
-
-        assert_eq!(result, expected);
-    }
-
-    #[test]
-    pub fn test_manhattan_distance_to() {
-        let first_asteroid = TEST_DATA_ASTEROIDS[8].clone();
-        let second_asteroid = TEST_DATA_ASTEROIDS[0].clone();
-
-        let expected = 6;
-
-        let result = first_asteroid.manhattan_distance_to(&second_asteroid);
 
         assert_eq!(result, expected);
     }
@@ -347,24 +463,6 @@ mod tests {
     }
 
     #[test]
-    pub fn test_on_same_los() {
-        let asteroid = TEST_DATA_ASTEROIDS[8].clone();
-        let seen_asteroid = TEST_DATA_ASTEROIDS[4].clone();
-        let blocked_asteroid = TEST_DATA_ASTEROIDS[0].clone();
-
-        assert!(asteroid.on_same_los(&seen_asteroid, &blocked_asteroid));
-    }
-
-    #[test]
-    pub fn test_not_on_same_los() {
-        let asteroid = TEST_DATA_ASTEROIDS[6].clone();
-        let seen_asteroid = TEST_DATA_ASTEROIDS[1].clone();
-        let other_seen_asteroid = TEST_DATA_ASTEROIDS[7].clone();
-
-        assert!(!asteroid.on_same_los(&seen_asteroid, &other_seen_asteroid));
-    }
-
-    #[test]
     pub fn test_relative_coordinates_of() {
         let first_asteroid = TEST_DATA_ASTEROIDS[4].clone();
         let second_asteroid = TEST_DATA_ASTEROIDS[1].clone();
@@ -389,7 +487,11 @@ mod tests {
             original_data: test_data.clone(),
         };
 
-        let result = AsteroidMap::new(&test_data);
+        let mut result = AsteroidMap::new(&test_data);
+
+        for result_asteroid in result.map.iter_mut() {
+            result_asteroid.other_asteroids_grouped_by_relative_polar_coords = Vec::new();
+        }
 
         assert_eq!(result, expected);
     }
@@ -401,7 +503,9 @@ mod tests {
 
         let expected = TEST_DATA_ASTEROIDS[8].clone();
 
-        let result = map.best_monitoring_station_location();
+        let mut result = map.best_monitoring_station_location();
+
+        result.other_asteroids_grouped_by_relative_polar_coords = Vec::new();
 
         assert_eq!(result, expected);
     }
@@ -413,8 +517,54 @@ mod tests {
 
         let expected = Asteroid::new(5, 8, 33);
 
-        let result = map.best_monitoring_station_location();
+        let mut result = map.best_monitoring_station_location();
+
+        result.other_asteroids_grouped_by_relative_polar_coords = Vec::new();
 
         assert_eq!(result, expected);
+    }
+
+    #[test]
+    pub fn test_largest_best_monitoring_station_location() {
+        let test_data: Vec<Vec<char>> = LARGEST_TEST_DATA.iter().map(|arr| arr.to_vec()).collect();
+        let map = AsteroidMap::new(&test_data);
+
+        let expected = Asteroid::new(11, 13, 210);
+
+        let mut result = map.best_monitoring_station_location();
+
+        result.other_asteroids_grouped_by_relative_polar_coords = Vec::new();
+
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_largest_nth_vaporized_asteroid_from_best_monitoring_station() {
+        let test_data: Vec<Vec<char>> = LARGEST_TEST_DATA.iter().map(|arr| arr.to_vec()).collect();
+        let map = AsteroidMap::new(&test_data);
+
+        let expected_coords_3 = (12, 2);
+        let expected_coords_200 = (8, 2);
+        let expected_coords_299 = (11, 1);
+        let expected_300 = None;
+
+        let result_3 = map
+            .nth_vaporized_asteroid_from_best_monitoring_station(3)
+            .unwrap();
+        let result_coords_3 = (result_3.x_location, result_3.y_location);
+        let result_200 = map
+            .nth_vaporized_asteroid_from_best_monitoring_station(200)
+            .unwrap();
+        let result_coords_200 = (result_200.x_location, result_200.y_location);
+        let result_299 = map
+            .nth_vaporized_asteroid_from_best_monitoring_station(299)
+            .unwrap();
+        let result_coords_299 = (result_299.x_location, result_299.y_location);
+        let result_300 = map.nth_vaporized_asteroid_from_best_monitoring_station(300);
+
+        assert_eq!(result_coords_3, expected_coords_3);
+        assert_eq!(result_coords_200, expected_coords_200);
+        assert_eq!(result_coords_299, expected_coords_299);
+        assert_eq!(result_300, expected_300);
     }
 }
