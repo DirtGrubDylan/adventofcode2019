@@ -30,8 +30,9 @@ fn run_part_1(asteroid_map: &AsteroidMap) {
     );
 }
 fn run_part_2(asteroid_map: &AsteroidMap) {
-    let nth_vaporized_asteroid =
-        asteroid_map.nth_vaporized_asteroid_from_best_monitoring_station(200).unwrap();
+    let nth_vaporized_asteroid = asteroid_map
+        .nth_vaporized_asteroid_from_best_monitoring_station(200)
+        .unwrap();
 
     let result = nth_vaporized_asteroid.x_location * 100 + nth_vaporized_asteroid.y_location;
 
