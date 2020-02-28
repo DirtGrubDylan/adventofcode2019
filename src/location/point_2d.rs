@@ -2,7 +2,7 @@ use std::ops::{Add, Div, Mul, Sub};
 
 use super::Location;
 
-#[derive(Debug, PartialEq, PartialOrd, Hash, Copy, Clone)]
+#[derive(Debug, Eq, PartialEq, PartialOrd, Hash, Copy, Clone)]
 pub struct Point2d<T>
 where
     T: Add<Output = T> + Sub<Output = T> + Mul<Output = T> + Div<Output = T> + Into<f64> + Copy,
