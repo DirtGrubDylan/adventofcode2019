@@ -39,12 +39,6 @@ impl IntcodeComputer {
             self.current_index,
         );
 
-        println!("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
-
-        println!("Input: {:?}", self.current_input);
-        println!("Index: {}", self.current_index);
-        println!("Opcode: {:?}", opcode);
-
         if let Opcode::SaveInput(_, _) = opcode {
             if self.current_input.is_none() {
                 return output;
@@ -56,21 +50,12 @@ impl IntcodeComputer {
             self.current_index,
             self.current_base_index,
         ) {
-            println!("***********************************************");
-
-            println!("Input: {:?}", self.current_input);
-            println!("Index: {}", self.current_index);
-            println!("Next Index: {}", self.current_index);
-
             let next_opcode = Opcode::new(
                 self.current_input.unwrap_or(0),
                 &self.current_program,
                 next_index,
             );
             self.current_index = next_index;
-
-            println!("Opcode: {:?}", opcode);
-            println!("Next Opcode: {:?}", next_opcode);
 
             match opcode {
                 Opcode::Output(_) => {
@@ -94,8 +79,6 @@ impl IntcodeComputer {
 
             opcode = next_opcode;
         }
-
-        println!("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
 
         self.current_status = IntcodeComputerStatus::Finished;
 

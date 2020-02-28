@@ -78,12 +78,7 @@ impl Robot {
     pub fn run_program(&mut self) {
         self.brain.execute_program();
 
-        let mut step = 0;
-
         while self.brain.get_status() == IntcodeComputerStatus::WaitingForInput {
-            println!("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-            println!("Step: {}", step);
-
             let current_paint_value = *self
                 .panel_map
                 .get(&self.current_location)
@@ -106,18 +101,14 @@ impl Robot {
                     ),
                 };
 
-            // if step == 5 {
-            //     println!("{:?}", self.brain.get_outputs());
-            //     println!("{:?}", (paint_output, direction_output));
-            //     panic!();
-            // }
-
             self.paint_current_location(paint_output);
             self.change_direction(direction_output);
             self.move_forward();
-            step += 1;
-            println!("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
         }
+    }
+
+    pub fn get_number_of_painted_panels(&self) -> usize {
+        self.panel_map.len()
     }
 
     fn change_direction(&mut self, direction_output: i128) {
@@ -148,27 +139,12 @@ impl Robot {
 mod tests {
     use super::*;
 
-    use crate::intcode_computer::slice_to_hashmap;
-
-    // outputs)[paint, turn]
-
-    // (0, 0)
-    // step 1) input: 0, outputs: [0, 0] -> (-1, 0)
-    // step 2) input: 0, outputs: [0, 0] -> (-1, -1)
-    // step 3) input: 0, outputs: [0, 0] -> (0, -1)
-    // step 4) input: 0, outputs: [0, 0] -> (0, 0)
-    // step 5) input: 1, outputs: [1, 1] -> (1, 0)
-    // step 6) input: 0, outputs: [0, 0] -> (1, 1)
-    // step 7) input: 0, outputs: [0, 0] -> (0, 1)
-
-    // panels painted: 6
-
     const PROGRAM: [i32; 37] = [
         3, 33, // input
         1001, 36, -1, 36, // count--
         1006, 36, 32, // jump to terminate if count == 0
-        1008, 36, 3, 34, // Add 1 to paint var if count == 5
-        1008, 36, 3, 35, // Add 1 to turn var if count == 5
+        1008, 36, 2, 34, // Add 1 to paint var if count == 5
+        1008, 36, 2, 35, // Add 1 to turn var if count == 5
         1, 33, 34, 34, // add paint var to input var for paint output (same as input)
         1, 33, 35, 35, // add turn var to input var for turn output (same as input)
         4, 34, // get paint output
