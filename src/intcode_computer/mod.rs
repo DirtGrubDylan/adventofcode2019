@@ -121,7 +121,7 @@ impl IntcodeComputer {
     }
 
     pub fn get_last_n_outputs(&self, n: usize) -> Vec<i128> {
-        self.outputs.iter().rev().take(n).map(|&x| x).collect()
+        self.outputs.iter().rev().take(n).map(|&x| x).rev().collect()
     }
 
     pub fn get_outputs(&self) -> Vec<i128> {

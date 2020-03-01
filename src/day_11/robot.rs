@@ -4,7 +4,7 @@ use crate::intcode_computer::{IntcodeComputer, IntcodeComputerStatus};
 use crate::location::point_2d::Point2d;
 
 #[derive(Debug, PartialEq, Clone, Copy)]
-enum PaintColor {
+pub enum PaintColor {
     Black = 0,
     White = 1,
 }
@@ -55,6 +55,7 @@ pub struct Robot {
     panel_map: HashMap<Point2d<i32>, PaintColor>,
     facing_direction: Direction,
     current_location: Point2d<i32>,
+    current_panel_color: PaintColor,
 }
 
 impl Robot {
@@ -66,12 +67,14 @@ impl Robot {
         let panel_map = HashMap::new();
         let facing_direction = Direction::Up;
         let current_location = Point2d::new(0, 0);
+        let current_panel_color = PaintColor::Black;
 
         Robot {
             brain,
             panel_map,
             facing_direction,
             current_location,
+            current_panel_color,
         }
     }
 
@@ -79,12 +82,7 @@ impl Robot {
         self.brain.execute_program();
 
         while self.brain.get_status() == IntcodeComputerStatus::WaitingForInput {
-            let current_paint_value = *self
-                .panel_map
-                .get(&self.current_location)
-                .unwrap_or(&PaintColor::Black) as i128;
-
-            self.brain.set_input(current_paint_value);
+            self.brain.set_input(self.current_panel_color as i128);
 
             self.brain.execute_program();
 
@@ -104,17 +102,41 @@ impl Robot {
             self.paint_current_location(paint_output);
             self.change_direction(direction_output);
             self.move_forward();
+
+            self.current_panel_color = *self
+                .panel_map
+                .get(&self.current_location)
+                .unwrap_or(&PaintColor::Black);
         }
     }
 
-    pub fn get_number_of_painted_panels(&self) -> usize {
-        self.panel_map.len()
+    pub fn set_starting_panel_color(&mut self, panel_color: PaintColor) {
+        self.current_panel_color = panel_color;
+    }
+
+    pub fn reset(&mut self) {
+        self.brain.reset();
+        self.panel_map.clear();
+        self.facing_direction = Direction::Up;
+        self.current_location = Point2d::new(0, 0);
+        self.current_panel_color = PaintColor::Black;
+    }
+
+    pub fn get_painted_panels(&self) -> HashMap<Point2d<i32>, PaintColor> {
+        self.panel_map.clone()
     }
 
     fn change_direction(&mut self, direction_output: i128) {
-        self.facing_direction = match direction_output {
-            0 => (((self.facing_direction as i32) + 3) % 4).into(),
-            1 => (((self.facing_direction as i32) + 1) % 4).into(),
+        self.facing_direction =
+        match (direction_output, self.facing_direction) {
+            (0, Direction::Up) => Direction::Left,
+            (0, Direction::Left) => Direction::Down,
+            (0, Direction::Down) => Direction::Right,
+            (0, Direction::Right) => Direction::Up,
+            (1, Direction::Up) => Direction::Right,
+            (1, Direction::Right) => Direction::Down,
+            (1, Direction::Down) => Direction::Left,
+            (1, Direction::Left) => Direction::Up,
             _ => panic!("Unexpected direction output: {}", direction_output),
         };
     }

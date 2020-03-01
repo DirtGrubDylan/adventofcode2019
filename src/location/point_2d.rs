@@ -2,10 +2,10 @@ use std::ops::{Add, Div, Mul, Sub};
 
 use super::Location;
 
-#[derive(Debug, Eq, PartialEq, PartialOrd, Hash, Copy, Clone)]
+#[derive(Debug, Eq, PartialEq, PartialOrd, Hash, Copy, Clone, Ord)]
 pub struct Point2d<T>
 where
-    T: Add<Output = T> + Sub<Output = T> + Mul<Output = T> + Div<Output = T> + Into<f64> + Copy,
+    T: Add<Output = T> + Sub<Output = T> + Mul<Output = T> + Div<Output = T> + Ord + Into<f64> + Copy,
 {
     pub x: T,
     pub y: T,
@@ -13,7 +13,7 @@ where
 
 impl<T> Point2d<T>
 where
-    T: Add<Output = T> + Sub<Output = T> + Mul<Output = T> + Div<Output = T> + Into<f64> + Copy,
+    T: Add<Output = T> + Sub<Output = T> + Mul<Output = T> + Div<Output = T> + Ord + Into<f64> + Copy,
 {
     pub fn new(x: T, y: T) -> Point2d<T> {
         Point2d { x, y }
@@ -22,7 +22,7 @@ where
 
 impl<T> Location for Point2d<T>
 where
-    T: Add<Output = T> + Sub<Output = T> + Mul<Output = T> + Div<Output = T> + Into<f64> + Copy,
+    T: Add<Output = T> + Sub<Output = T> + Mul<Output = T> + Div<Output = T> + Ord + Into<f64> + Copy,
 {
     type ValueOutput = T;
 
