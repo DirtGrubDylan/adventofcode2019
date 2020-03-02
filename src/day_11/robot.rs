@@ -127,8 +127,7 @@ impl Robot {
     }
 
     fn change_direction(&mut self, direction_output: i128) {
-        self.facing_direction =
-        match (direction_output, self.facing_direction) {
+        self.facing_direction = match (direction_output, self.facing_direction) {
             (0, Direction::Up) => Direction::Left,
             (0, Direction::Left) => Direction::Down,
             (0, Direction::Down) => Direction::Right,
@@ -171,7 +170,7 @@ mod tests {
         1, 33, 35, 35, // add turn var to input var for turn output (same as input)
         4, 34, // get paint output
         4, 35, // get turn output
-        1005, 36, 0, // jump to beginning if count > 0
+        1005, 36, 0,  // jump to beginning if count > 0
         99, // terminate 32
         0,  // input var 33
         0,  // paint var 34

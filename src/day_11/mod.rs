@@ -3,7 +3,7 @@ mod robot;
 use crate::file_reader::to_string_vector;
 use crate::location::point_2d::Point2d;
 
-use robot::{Robot, PaintColor};
+use robot::{PaintColor, Robot};
 
 pub fn run_day_11() {
     let file_input = to_string_vector("inputs/day_11.txt");
@@ -43,7 +43,11 @@ fn run_part_2(robot: &mut Robot) {
 
     let painted_panels = robot.get_painted_panels();
 
-    let (max_x, max_y) = match painted_panels.keys().into_iter().max_by_key(|point| point.x.abs() + point.y.abs()) {
+    let (max_x, max_y) = match painted_panels
+        .keys()
+        .into_iter()
+        .max_by_key(|point| point.x.abs() + point.y.abs())
+    {
         Some(point) => (point.x.abs(), point.y.abs()),
         None => panic!("There were no max points!!!!"),
     };
@@ -74,5 +78,4 @@ fn run_part_2(robot: &mut Robot) {
             println!("{}", s);
         }
     }
-
 }
