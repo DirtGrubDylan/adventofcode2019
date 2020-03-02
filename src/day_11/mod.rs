@@ -48,7 +48,7 @@ fn run_part_2(robot: &mut Robot) {
         .into_iter()
         .max_by_key(|point| point.x.abs())
     {
-        Some(point) => point.x.abs(),
+        Some(point) => point.x.abs() + 1,
         None => panic!("There were no max points!!!!"),
     };
 
@@ -57,7 +57,7 @@ fn run_part_2(robot: &mut Robot) {
         .into_iter()
         .max_by_key(|point| point.y.abs())
     {
-        Some(point) => point.y.abs(),
+        Some(point) => point.y.abs() + 1,
         None => panic!("There were no max points!!!!"),
     };
 
