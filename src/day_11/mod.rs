@@ -43,14 +43,24 @@ fn run_part_2(robot: &mut Robot) {
 
     let painted_panels = robot.get_painted_panels();
 
-    let (max_x, max_y) = match painted_panels
+    let max_x = match painted_panels
         .keys()
         .into_iter()
-        .max_by_key(|point| point.x.abs() + point.y.abs())
+        .max_by_key(|point| point.x.abs())
     {
-        Some(point) => (point.x.abs(), point.y.abs()),
+        Some(point) => point.x.abs(),
         None => panic!("There were no max points!!!!"),
     };
+
+    let max_y = match painted_panels
+        .keys()
+        .into_iter()
+        .max_by_key(|point| point.y.abs())
+    {
+        Some(point) => point.y.abs(),
+        None => panic!("There were no max points!!!!"),
+    };
+
 
     let mut display = Vec::new();
 
