@@ -59,6 +59,13 @@ where
 
         temp.sqrt()
     }
+
+    fn add(&self, other: &Point2d<T>) -> Point2d<T> {
+        let new_x = self.x + other.x;
+        let new_y = self.y + other.y;
+
+        Point2d::new(new_x, new_y)
+    }
 }
 
 #[cfg(test)]
@@ -89,5 +96,17 @@ mod tests {
         let result = ORIGIN_POINT.distance_to(&point);
 
         assert!((result - expected).abs() < EPSILON);
+    }
+
+    #[test]
+    fn test_add() {
+        let first = Point2d::new(3, 4);
+        let second = Point2d::new(5, -1);
+
+        let expected = Point2d::new(8, 3);
+
+        let result = first.add(&second);
+
+        assert_eq!(result, expected);
     }
 }
