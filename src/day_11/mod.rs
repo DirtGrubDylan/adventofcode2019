@@ -61,7 +61,6 @@ fn run_part_2(robot: &mut Robot) {
         None => panic!("There were no max points!!!!"),
     };
 
-
     let mut display = Vec::new();
 
     for y in 0..(max_y * 2) {

@@ -7,6 +7,7 @@ pub mod location;
 mod day_1;
 mod day_10;
 mod day_11;
+mod day_12;
 mod day_2;
 mod day_3;
 mod day_4;
@@ -33,6 +34,7 @@ fn run_day(day: i128) {
         9 => day_9::run_day_9(),
         10 => day_10::run_day_10(),
         11 => day_11::run_day_11(),
+        12 => day_12::run_day_12(),
         _ => unimplemented!("I haven't done that day yet :("),
     }
 }
@@ -50,6 +52,24 @@ pub fn get_user_input() -> i128 {
         .trim()
         .parse::<i128>()
         .expect("Failed to parse user_input!")
+}
+
+pub fn gcd(a: u128, b: u128) -> u128 {
+    match ((a, b), (a & 1, b & 1)) {
+        ((x, y), _) if x == y => y,
+        ((0, x), _) | ((x, 0), _) => x,
+        ((x, y), (0, 1)) | ((y, x), (1, 0)) => gcd(x >> 1, y),
+        ((x, y), (0, 0)) => gcd(x >> 1, y >> 1) << 1,
+        ((x, y), (1, 1)) => {
+            let (x, y) = (x.min(y), x.max(y));
+            gcd((y - x) >> 1, x)
+        }
+        _ => panic!("GCD made it to an unreachable state!"),
+    }
+}
+
+pub fn lcm(a: u128, b: u128) -> u128 {
+    a * b / gcd(a, b)
 }
 
 fn main() {
