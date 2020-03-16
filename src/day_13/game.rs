@@ -31,7 +31,9 @@ pub struct Game {
 
 impl Game {
     pub fn new() -> Game {
-        Game { map: HashMap::new() }
+        Game {
+            map: HashMap::new(),
+        }
     }
 
     pub fn initialize_map(&mut self, data: &[i128]) {
@@ -70,7 +72,9 @@ mod tests {
         let expected = vec![
             (Point2d::new(1, 2), Tile::HorizontalPaddle),
             (Point2d::new(6, 5), Tile::Ball),
-        ].into_iter().collect();
+        ]
+        .into_iter()
+        .collect();
 
         let result = game.get_map_copy();
 
