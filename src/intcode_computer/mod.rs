@@ -133,6 +133,10 @@ impl IntcodeComputer {
     pub fn get_outputs(&self) -> Vec<i128> {
         self.outputs.clone()
     }
+
+    pub fn increment_index(&mut self, step_size: u128) {
+        self.current_index += step_size;
+    }
 }
 
 impl From<&[i128]> for IntcodeComputer {
