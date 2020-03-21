@@ -60,7 +60,7 @@ impl Game {
             panic!("The data given to initialize the map should be in groups of three!");
         }
 
-        self.number_of_blocks = 0;
+        // self.number_of_blocks = 0;
 
         for group in data.chunks(3) {
             if group[0] == -1 {
@@ -76,10 +76,10 @@ impl Game {
             let tile = Tile::from_i128(group[2]);
 
             match tile {
-                Tile::Block  => self.number_of_blocks += 1,
+                Tile::Block => self.number_of_blocks += 1,
                 Tile::HorizontalPaddle => self.paddle_location = Some(point.clone()),
                 Tile::Ball => self.ball_location = Some(point.clone()),
-                _ => ()
+                _ => (),
             };
 
             if let Some(map_tile) = self.map.get(&point) {
@@ -104,7 +104,7 @@ impl Game {
     pub fn get_ball_location(&self) -> Option<Point2d<i32>> {
         self.ball_location.clone()
     }
-    
+
     pub fn get_score(&self) -> i128 {
         self.score
     }
@@ -134,6 +134,8 @@ impl Game {
 
         print!("\x1B[2J");
 
+        println!("Score: {}", self.score);
+
         for string in temp_map_vec {
             println!("{}", string);
         }
@@ -159,8 +161,6 @@ mod tests {
         .into_iter()
         .collect();
 
-        let result = game.get_map_copy();
-
-        assert_eq!(result, expected);
+        assert_eq!(game.map, expected);
     }
 }

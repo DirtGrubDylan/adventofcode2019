@@ -17,6 +17,7 @@ pub struct IntcodeComputer {
     current_input: Option<i128>,
     current_status: IntcodeComputerStatus,
     current_base_index: u128,
+    output_cache: Vec<i128>,
     outputs: Vec<i128>,
     original_program: HashMap<u128, i128>,
 }
@@ -32,6 +33,7 @@ impl IntcodeComputer {
     pub fn execute_program(&mut self) -> Option<i128> {
         let mut output = None;
         self.current_status = IntcodeComputerStatus::WaitingForInput;
+        self.output_cache = Vec::new();
 
         let mut opcode = Opcode::new(
             self.current_input.unwrap_or(0),
@@ -60,6 +62,8 @@ impl IntcodeComputer {
             match opcode {
                 Opcode::Output(_) => {
                     self.outputs.push(opcode_execution_result);
+                    self.output_cache.push(opcode_execution_result);
+
                     output = Some(opcode_execution_result);
                 }
                 Opcode::SaveInput(_, _) => {
@@ -105,6 +109,7 @@ impl IntcodeComputer {
         self.current_input = None;
         self.current_status = IntcodeComputerStatus::NotStarted;
         self.current_base_index = 0;
+        self.output_cache = Vec::new();
         self.outputs = Vec::new();
     }
 
@@ -134,6 +139,10 @@ impl IntcodeComputer {
         self.outputs.clone()
     }
 
+    pub fn get_output_cache(&self) -> Vec<i128> {
+        self.output_cache.clone()
+    }
+
     pub fn increment_index(&mut self, step_size: u128) {
         self.current_index += step_size;
     }
@@ -147,6 +156,7 @@ impl From<&[i128]> for IntcodeComputer {
             current_input: None,
             current_status: IntcodeComputerStatus::NotStarted,
             current_base_index: 0,
+            output_cache: Vec::new(),
             outputs: Vec::new(),
             original_program: slice_to_hashmap(a),
         }
@@ -204,6 +214,7 @@ mod tests {
             current_input: None,
             current_status: IntcodeComputerStatus::NotStarted,
             current_base_index: 0,
+            output_cache: Vec::new(),
             outputs: Vec::new(),
             original_program: slice_to_hashmap(&PROGRAM),
         };
@@ -316,6 +327,7 @@ mod tests {
             current_input: None,
             current_status: IntcodeComputerStatus::WaitingForInput,
             current_base_index: 0,
+            output_cache: Vec::new(),
             outputs: Vec::new(),
             original_program: slice_to_hashmap(&PROGRAM.to_vec()),
         };
@@ -350,6 +362,7 @@ mod tests {
             current_input: None,
             current_status: IntcodeComputerStatus::Finished,
             current_base_index: 0,
+            output_cache: vec![756],
             outputs: vec![756],
             original_program: slice_to_hashmap(&PROGRAM.to_vec()),
         };
