@@ -25,7 +25,7 @@ pub fn run_day_13() {
 
                 let mut game = Game::new();
 
-                game.initialize_map(&intcode_computer.get_outputs());
+                game.initialize_map(&intcode_computer.get_output_cache());
 
                 run_part_1(&game);
                 run_part_2(&mut game, &mut intcode_computer);
@@ -40,8 +40,6 @@ pub fn run_part_1(game: &Game) {
 }
 
 pub fn run_part_2(game: &mut Game, intcode_computer: &mut IntcodeComputer) {
-    let max_number_of_tiles = game.get_max_number_of_tiles();
-
     let mut number_of_blocks = game.get_number_of_blocks();
 
     while 0 < number_of_blocks {
@@ -58,12 +56,12 @@ pub fn run_part_2(game: &mut Game, intcode_computer: &mut IntcodeComputer) {
 
         intcode_computer.execute_program();
 
-        game.initialize_map(&intcode_computer.get_last_n_outputs(max_number_of_tiles));
+        game.initialize_map(&intcode_computer.get_output_cache());
 
         number_of_blocks = game.get_number_of_blocks();
 
         // uncomment to watch the game :)
-        //game.print_map();
+        game.print_map();
     }
 
     println!("Day 13 Part 2 Solution: {}", game.get_score());
