@@ -60,8 +60,6 @@ impl Game {
             panic!("The data given to initialize the map should be in groups of three!");
         }
 
-        // self.number_of_blocks = 0;
-
         for group in data.chunks(3) {
             if group[0] == -1 {
                 self.score = group[2];
@@ -107,10 +105,6 @@ impl Game {
 
     pub fn get_score(&self) -> i128 {
         self.score
-    }
-
-    pub fn get_max_number_of_tiles(&self) -> usize {
-        self.map.len() * 3 * 100
     }
 
     #[allow(dead_code)]

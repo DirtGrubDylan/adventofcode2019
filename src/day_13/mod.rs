@@ -61,7 +61,7 @@ pub fn run_part_2(game: &mut Game, intcode_computer: &mut IntcodeComputer) {
         number_of_blocks = game.get_number_of_blocks();
 
         // uncomment to watch the game :)
-        game.print_map();
+        // game.print_map();
     }
 
     println!("Day 13 Part 2 Solution: {}", game.get_score());
