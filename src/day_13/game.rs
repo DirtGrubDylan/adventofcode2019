@@ -109,6 +109,10 @@ impl Game {
         self.score
     }
 
+    pub fn get_max_number_of_tiles(&self) -> usize {
+        self.map.len() * 3 * 100
+    }
+
     #[allow(dead_code)]
     pub fn print_map(&self) {
         let min_x = self.map.keys().min_by_key(|point| point.x).unwrap().x;

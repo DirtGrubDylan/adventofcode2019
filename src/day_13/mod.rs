@@ -40,6 +40,8 @@ pub fn run_part_1(game: &Game) {
 }
 
 pub fn run_part_2(game: &mut Game, intcode_computer: &mut IntcodeComputer) {
+    let max_number_of_tiles = game.get_max_number_of_tiles();
+
     let mut number_of_blocks = game.get_number_of_blocks();
 
     while 0 < number_of_blocks {
@@ -56,8 +58,7 @@ pub fn run_part_2(game: &mut Game, intcode_computer: &mut IntcodeComputer) {
 
         intcode_computer.execute_program();
 
-
-        game.initialize_map(&intcode_computer.get_outputs());
+        game.initialize_map(&intcode_computer.get_last_n_outputs(max_number_of_tiles));
 
         number_of_blocks = game.get_number_of_blocks();
 
