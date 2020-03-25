@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use crate::location::point_2d::Point2d;
 
+// Something stupid
 #[derive(Debug, PartialEq, Clone)]
 pub enum Tile {
     Empty,
