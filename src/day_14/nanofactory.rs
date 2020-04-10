@@ -85,10 +85,6 @@ impl Nanofactory {
             .insert(reaction.reaction_type.clone(), reaction);
     }
 
-    pub fn get_leftovers(&self) -> HashMap<String, u64> {
-        self.leftovers.clone()
-    }
-
     pub fn number_of_ore_to_make_n_fuel(&self, fuel_quantity: u64) -> u64 {
         let mut simulated_self = self.clone();
 
@@ -98,7 +94,6 @@ impl Nanofactory {
     }
 
     fn make_n_fuel(&mut self, fuel_quantity: u64) {
-        // add fuel ingredient w/ quantity to queue
         let fuel_ingredient = Ingredient::new("FUEL", fuel_quantity);
 
         self.processing_queue.push_back(fuel_ingredient);
@@ -119,22 +114,17 @@ impl Nanofactory {
     fn get_ingredients_needed_to_make(&mut self, ingredient: Ingredient) -> VecDeque<Ingredient> {
         let leftovers_of_ingredient = self.leftovers.entry(ingredient.name.clone()).or_insert(0);
 
-        // Subtract all possible leftovers from ingredient quantity
         let needed_ingredient_quantity =
             (ingredient.quantity).saturating_sub(*leftovers_of_ingredient);
 
-        // remove leftovers used
         *leftovers_of_ingredient = (*leftovers_of_ingredient).saturating_sub(ingredient.quantity);
 
-        // if we dont need anything, return empty queue
         if needed_ingredient_quantity == 0 {
             return VecDeque::new();
         }
 
-        // get reaction
         let reaction_to_make_ingredient = self.reactions.get(&ingredient.name).unwrap();
 
-        // determine the quanity of reactions needed
         let quantity_of_ingredient_that_can_be_made = reaction_to_make_ingredient.produces;
 
         let mut number_of_reactions_needed =
@@ -144,12 +134,10 @@ impl Nanofactory {
             number_of_reactions_needed += 1;
         }
 
-        // determine any leftovers
         *leftovers_of_ingredient = number_of_reactions_needed
             * quantity_of_ingredient_that_can_be_made
             - needed_ingredient_quantity;
 
-        // multiply the number of reaction to each ingredient of reaction
         reaction_to_make_ingredient
             .ingredients
             .iter()

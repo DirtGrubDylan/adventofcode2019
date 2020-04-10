@@ -23,7 +23,10 @@ pub fn run_day_14() {
 }
 
 pub fn run_part_1(nanofactory: &Nanofactory) {
-    println!("Day 14 Part 1 Solution: {}", nanofactory.number_of_ore_to_make_n_fuel(1));
+    println!(
+        "Day 14 Part 1 Solution: {}",
+        nanofactory.number_of_ore_to_make_n_fuel(1)
+    );
 }
 
 pub fn run_part_2(nanofactory: &Nanofactory) {
@@ -57,4 +60,3 @@ pub fn run_part_2(nanofactory: &Nanofactory) {
 
     println!("Day 14 Part 2 Solution: {}", mid);
 }
-
